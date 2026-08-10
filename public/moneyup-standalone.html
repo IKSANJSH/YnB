@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>머니업</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif; background:#fff7ed; color:#1f2937; min-height:100vh; }
+  main { min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px 20px 60px; text-align:center; }
+  .wrap { width:100%; max-width:640px; }
+  .row { display:flex; align-items:center; }
+  .card { background:#fff; border:2px solid #e5e7eb; border-radius:12px; padding:20px 24px; text-align:left; }
+  button { font-family:inherit; }
+  a { color:inherit; }
+  .hamburger { background:none; border:none; cursor:pointer; padding:8px; display:flex; flex-direction:column; gap:4px; }
+  .hamburger span { width:22px; height:2px; background:#1f2937; border-radius:2px; display:block; }
+  h1 { font-size:20px; font-weight:800; margin-left:16px; }
+  .pill { padding:6px 14px; border-radius:999px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid #e5e7eb; background:#fff; color:#374151; }
+  .pill.active { border:1px solid #16a34a; background:#f0fdf4; color:#16a34a; }
+  .tip-card { background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:14px; }
+  .tip-title { font-weight:700; font-size:13px; color:#9a3412; }
+  .tip-desc { font-size:12px; color:#6b7280; margin-top:6px; line-height:1.5; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  input[type=text], input[type=number] { padding:10px 14px; font-size:15px; border:2px solid #e5e7eb; border-radius:8px; }
+  .btn-orange { padding:10px 18px; font-size:14px; font-weight:700; color:#fff; background:#f97316; border:none; border-radius:8px; cursor:pointer; }
+  .btn-red { padding:10px 18px; font-size:14px; font-weight:700; color:#fff; background:#dc2626; border:none; border-radius:8px; cursor:pointer; }
+  .btn-blue { padding:10px 18px; font-size:14px; font-weight:700; color:#fff; background:#2563eb; border:none; border-radius:8px; cursor:pointer; }
+  .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:20; display:none; }
+  .drawer-overlay.open { display:flex; }
+  .drawer { width:240px; height:100%; background:#fff; box-shadow:2px 0 12px rgba(0,0,0,.15); padding:24px 16px; display:flex; flex-direction:column; gap:8px; }
+  .drawer button { text-align:left; padding:12px 8px; font-size:15px; font-weight:700; background:none; border:none; border-radius:8px; cursor:pointer; }
+  .drawer button:hover { background:#f3f4f6; }
+  .page { display:none; width:100%; max-width:640px; flex-direction:column; gap:12px; text-align:left; }
+  .page.active { display:flex; }
+  .shake { animation: shake .4s; }
+  @keyframes shake {
+    10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)}
+    30%,50%,70%{transform:translateX(-8px)} 40%,60%{transform:translateX(8px)}
+  }
+  .checklist-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; margin-bottom:4px; }
+  .checklist-item .box { width:18px; height:18px; border-radius:5px; border:2px solid #d1d5db; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; }
+  .checklist-item.done { background:#f0fdf4; text-decoration:line-through; color:#16a34a; }
+  .checklist-item.done .box { border-color:#16a34a; background:#16a34a; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:30; display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff; border-radius:16px; padding:28px 24px; max-width:360px; width:100%; text-align:center; }
+  .asset-row { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:8px; border:2px solid #f3f4f6; background:#fff; cursor:pointer; text-align:left; }
+  .asset-row.selected { border-color:#f97316; background:#fff7ed; }
+</style>
+</head>
+<body>
+<main>
+  <div style="font-size:56px">💰</div>
+  <div class="wrap row" style="justify-content:flex-start;">
+    <button class="hamburger" id="menuBtn"><span></span><span></span><span></span></button>
+    <h1 id="pageTitle">머니업</h1>
+  </div>
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="card">
+      <p style="font-weight:800;font-size:16px;margin-bottom:12px">📰 금융 뉴스</p>
+      <div class="row" style="gap:8px;margin-bottom:12px">
+        <input type="text" id="newsSearchInput" placeholder="관심 기업 검색 (예: 삼성전자)" style="flex:1" />
+        <button class="btn-orange" id="newsSearchBtn">검색</button>
+      </div>
+      <div id="newsCategoryRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div id="newsSearchTag" style="display:none;align-items:center;gap:8px;margin-bottom:14px"></div>
+      <div id="newsList" style="display:flex;flex-direction:column;gap:14px"></div>
+      <p style="font-size:11px;color:#9ca3af;margin-top:10px">* 예시 데이터입니다 (독립 실행 파일이라 실시간 API 대신 샘플 뉴스를 보여줘요)</p>
+    </div>
+
+    <div class="card">
+      <p style="font-weight:800;font-size:16px;margin-bottom:12px">💡 20·30대가 알아야 할 금융 정보</p>
+      <div class="grid2" id="investTips"></div>
+    </div>
+  </div>
+
+  <!-- CREDIT -->
+  <div class="page" id="page-credit">
+    <p style="font-size:15px;color:#6b7280;text-align:center">다른 앱(토스, 뱅크샐러드 등)에서 확인한 신용점수를 입력해보세요</p>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+      <div class="row" style="gap:8px">
+        <input type="number" id="scoreInput" placeholder="예: 780" style="width:160px" />
+        <button class="btn-orange" id="scoreSubmit">코칭 받기</button>
+      </div>
+      <p id="scoreError" style="color:#dc2626;font-size:14px;display:none"></p>
+    </div>
+    <div class="card" id="coachingCard" style="display:none"></div>
+    <div class="card" id="peerCard" style="display:none"></div>
+    <div class="card" id="growthCard" style="display:none"></div>
+  </div>
+
+  <!-- CHALLENGE -->
+  <div class="page" id="page-challenge">
+    <div class="card">
+      <p style="font-weight:800;font-size:16px">🏆 금융 습관 챌린지</p>
+      <p id="challengeProgressText" style="font-size:13px;color:#6b7280;margin-top:4px"></p>
+    </div>
+    <div class="card" style="padding:20px 0">
+      <svg id="challengeSvg" width="100%"></svg>
+    </div>
+  </div>
+  <div class="modal-overlay" id="challengeModal">
+    <div class="modal-box">
+      <p id="modalLevel" style="font-size:13px;color:#9a3412;font-weight:700"></p>
+      <p id="modalMission" style="font-size:16px;font-weight:700;margin-top:10px;line-height:1.5"></p>
+      <div id="modalDoneMsg" style="display:none;font-size:13px;color:#16a34a;margin-top:16px">이미 완료한 단계예요 ✓</div>
+      <button class="btn-orange" id="modalCompleteBtn" style="margin-top:20px">완료하고 다음 단계 열기</button>
+      <button id="modalCloseBtn" style="display:block;margin:12px auto 0;background:none;border:none;color:#6b7280;font-size:13px;cursor:pointer">닫기</button>
+    </div>
+  </div>
+
+  <!-- INVEST -->
+  <div class="page" id="page-invest">
+    <div class="card">
+      <p style="font-size:13px;color:#6b7280">내 총자산</p>
+      <p id="investTotal" style="font-size:26px;font-weight:800;margin-top:4px"></p>
+      <p id="investProfit" style="font-size:14px;margin-top:6px;font-weight:700"></p>
+      <div class="row" style="justify-content:space-between;font-size:13px;color:#6b7280;margin-top:12px">
+        <span>현금</span><span id="investCash"></span>
+      </div>
+      <div class="row" style="justify-content:space-between;font-size:13px;color:#6b7280;margin-top:4px">
+        <span>보유 자산 평가액</span><span id="investHoldingsValue"></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <p style="font-weight:800;font-size:16px">시세</p>
+        <button class="pill" id="refreshPricesBtn" style="border:1px solid #fed7aa;background:#fff7ed;color:#f97316">🔄 시세 갱신 (모의)</button>
+      </div>
+      <div id="assetList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="card">
+      <p style="font-weight:800;font-size:16px;margin-bottom:12px" id="tradeTitle"></p>
+      <div class="row" style="gap:8px;align-items:center">
+        <input type="number" id="qtyInput" value="1" min="1" style="width:100px" />
+        <span style="font-size:13px;color:#6b7280">개</span>
+        <button class="btn-red" id="buyBtn">매수</button>
+        <button class="btn-blue" id="sellBtn">매도</button>
+      </div>
+      <p id="tradeMsg" style="font-size:13px;color:#6b7280;margin-top:10px"></p>
+    </div>
+    <div class="card" id="holdingsCard" style="display:none">
+      <p style="font-weight:800;font-size:16px;margin-bottom:12px">보유 종목</p>
+      <div id="holdingsList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:#9ca3af;margin-top:12px">머니업 · 사회초년생을 위한 금융습관 코칭 (독립 실행 파일)</p>
+
+  <div class="drawer-overlay" id="menuOverlay">
+    <div class="drawer" onclick="event.stopPropagation()">
+      <p style="font-weight:800;font-size:16px;margin-bottom:12px;padding-left:8px">메뉴</p>
+      <button data-page="home">홈</button>
+      <button data-page="credit">신용점수 분석</button>
+      <button data-page="challenge">챌린지</button>
+      <button data-page="invest">모의투자</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ---------- shared data ----------
+const PEER_AVERAGE = 680;
+
+const NEWS_BY_CATEGORY = {
+  "전체": [
+    { title: "20대 저신용 대출자 62.9%… \"소액이라도 꾸준히 상환해야\"", source: "헤럴드경제", time: "6분 전" },
+    { title: "한국인 금융이해력 65.7점… 지식은 있는데 왜 실천은 안 될까", source: "헤럴드경제", time: "40분 전" },
+    { title: "자소서 첨삭 4만원·모의면접 5만원… 돈 없으면 취준도 못해요", source: "한국경제", time: "1시간 전" },
+  ],
+  "금융": [
+    { title: "대신증권, KT CEO 초청 콥데이 주관…AI·AX 성장전략 공유", source: "한국경제", time: "27분 전" },
+    { title: "믿고 투자했는데…\"원금 전부 잃을 수도\" 금감원 경고", source: "한국경제", time: "1시간 전" },
+  ],
+  "증권": [
+    { title: "[특징주] 고려아연, 美 장관 '투자 활성화 사례' 언급에 급등(종합)", source: "연합뉴스", time: "3분 전" },
+    { title: "코스닥, 6.97%↑…코스피는 껑충 상승, 3거래일만에 반등", source: "연합뉴스", time: "6분 전" },
+  ],
+  "산업": [
+    { title: "의류OEM·반도체 팹리스·AI 드론 등 세내기주 등판", source: "한국경제", time: "1시간 전" },
+  ],
+  "IT": [
+    { title: "13일 MSCI 편·출입 발표…유력 후보 종목 및 투자 전략은?", source: "한국경제", time: "2시간 전" },
+  ],
+  "부동산": [
+    { title: "'퇴근길 ETF 거래' 재논의…거래소, 증권·운용사 실무진 소집", source: "한국경제", time: "4시간 전" },
+  ],
+};
+const ALL_NEWS_POOL = Object.values(NEWS_BY_CATEGORY).flat();
+
+const INVEST_TIPS = [
+  { title: "적립식 투자 (ETF·펀드)", desc: "매달 일정 금액을 자동으로 투자해 시점 리스크를 분산하는 방법. 소액으로 시작하기 좋다." },
+  { title: "청년도약계좌·청년희망적금", desc: "정부가 이자·매칭지원을 얹어주는 청년 전용 저축 상품. 목돈 마련의 기본기로 추천된다." },
+  { title: "비상금 통장 분리", desc: "생활비 통장과 분리해 3~6개월치 생활비를 파킹통장에 따로 모아두는 습관." },
+  { title: "신용점수 관리", desc: "연체 없이 카드 한도 30% 이하 사용, 자동이체 설정만으로도 신용점수를 꾸준히 올릴 수 있다." },
+];
+
+function esc(s){ const d=document.createElement('div'); d.innerText=s; return d.innerHTML; }
+function formatWon(n){ return Math.round(n).toLocaleString('ko-KR') + '원'; }
+
+// ---------- navigation ----------
+const pages = ['home','credit','challenge','invest'];
+const titles = { home:'머니업', credit:'신용점수 분석', challenge:'챌린지', invest:'모의투자' };
+function showPage(p){
+  pages.forEach(x => document.getElementById('page-'+x).classList.toggle('active', x===p));
+  document.getElementById('pageTitle').textContent = titles[p];
+}
+document.getElementById('menuBtn').onclick = () => document.getElementById('menuOverlay').classList.add('open');
+document.getElementById('menuOverlay').onclick = () => document.getElementById('menuOverlay').classList.remove('open');
+document.querySelectorAll('.drawer button').forEach(btn => {
+  btn.onclick = () => { showPage(btn.dataset.page); document.getElementById('menuOverlay').classList.remove('open'); };
+});
+
+// ---------- HOME ----------
+let currentCategory = '전체';
+let currentSearch = '';
+
+function renderNewsCategoryRow(){
+  const row = document.getElementById('newsCategoryRow');
+  row.innerHTML = '';
+  Object.keys(NEWS_BY_CATEGORY).forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (c === currentCategory ? ' active' : '');
+    b.textContent = c;
+    b.onclick = () => { currentSearch=''; currentCategory = c; renderHome(); };
+    row.appendChild(b);
+  });
+}
+
+function renderNews(){
+  const list = document.getElementById('newsList');
+  const tag = document.getElementById('newsSearchTag');
+  let items;
+  if (currentSearch) {
+    items = ALL_NEWS_POOL.filter(n => n.title.includes(currentSearch));
+    tag.style.display = 'flex';
+    tag.innerHTML = `<span class="pill" style="border-color:#f97316;background:#fff7ed;color:#f97316">🔍 "${esc(currentSearch)}"</span>
+      <button id="clearSearchBtn" style="font-size:12px;color:#9ca3af;background:none;border:none;cursor:pointer">✕ 검색 해제</button>`;
+    document.getElementById('newsCategoryRow').style.display = 'none';
+    document.getElementById('clearSearchBtn').onclick = () => { currentSearch=''; renderHome(); };
+  } else {
+    items = NEWS_BY_CATEGORY[currentCategory] || [];
+    tag.style.display = 'none';
+    document.getElementById('newsCategoryRow').style.display = 'flex';
+  }
+  list.innerHTML = items.length
+    ? items.map((n,i) => `
+      <div style="padding-bottom:${i<items.length-1?'14px':'0'};border-bottom:${i<items.length-1?'1px solid #f3f4f6':'none'}">
+        <p style="font-weight:700;font-size:14px">${esc(n.title)}</p>
+        <p style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(n.source)} · ${esc(n.time)}</p>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:#9ca3af">관련 뉴스가 없어요</p>';
+}
+
+function renderHome(){
+  renderNewsCategoryRow();
+  renderNews();
+}
+
+document.getElementById('newsSearchBtn').onclick = () => {
+  const q = document.getElementById('newsSearchInput').value.trim();
+  if (q) { currentSearch = q; renderHome(); }
+};
+document.getElementById('newsSearchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('newsSearchBtn').click();
+});
+
+document.getElementById('investTips').innerHTML = INVEST_TIPS.map(t => `
+  <div class="tip-card"><p class="tip-title">${esc(t.title)}</p><p class="tip-desc">${esc(t.desc)}</p></div>
+`).join('');
+
+renderHome();
+
+// ---------- CREDIT SCORE ----------
+let scoreHistory = [];
+let checkedMissions = {};
+
+function getCoaching(score){
+  if (score < 600) return { label:'관리 필요', color:'#dc2626', tips:[
+    '연체 없이 소액이라도 매달 꾸준히 상환하기','고금리 대출부터 우선 상환 계획 세우기','신용카드 한도의 30% 이하로만 사용하기'
+  ]};
+  if (score < 750) return { label:'보통', color:'#d97706', tips:[
+    '자동이체로 고정지출 연체 방지하기','비상금 3개월치 생활비 목표로 저축 시작하기','불필요한 구독 서비스 점검하기'
+  ]};
+  return { label:'우수', color:'#16a34a', tips:[
+    '여유 자금 일부를 적립식 투자로 전환 고려','신용점수 유지 위해 기존 습관 그대로 유지','주변 친구에게 노하우 공유해보기'
+  ]};
+}
+function getTierInfo(score){
+  if (score < 600) return { label:'관리 필요', color:'#dc2626' };
+  if (score < 750) return { label:'보통', color:'#d97706' };
+  return { label:'우수', color:'#16a34a' };
+}
+
+function scoreGaugeSvg(score){
+  const tier = getTierInfo(score);
+  const r = 54, c = 2*Math.PI*r, progress = Math.min(score/1000,1), offset = c*(1-progress);
+  return `<div style="position:relative;width:140px;height:140px">
+    <svg width="140" height="140" viewBox="0 0 140 140">
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="#f3f4f6" stroke-width="12"/>
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="${tier.color}" stroke-width="12" stroke-linecap="round"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" transform="rotate(-90 70 70)"/>
+    </svg>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <span style="font-size:24px;font-weight:800">${score}</span>
+      <span style="font-size:12px;color:${tier.color};font-weight:700">${tier.label}</span>
+    </div>
+  </div>`;
+}
+
+function nextTierProgressHtml(score){
+  const nextGoal = score < 600 ? 600 : score < 750 ? 750 : 1000;
+  const prevGoal = score < 600 ? 0 : score < 750 ? 600 : 750;
+  const pct = Math.min(100, Math.round(((score-prevGoal)/(nextGoal-prevGoal))*100));
+  const remaining = Math.max(0, nextGoal-score);
+  return `<div style="width:100%">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280">
+      <span>다음 등급까지</span><span>${remaining===0?'최고 등급 달성!':remaining+'점 남음'}</span>
+    </div>
+    <div style="background:#f3f4f6;border-radius:999px;height:10px;margin-top:6px;overflow:hidden">
+      <div style="width:${pct}%;height:100%;background:#f97316;border-radius:999px"></div>
+    </div>
+  </div>`;
+}
+
+function renderCoachingCard(score, result){
+  const doneCount = Object.values(checkedMissions).filter(Boolean).length;
+  document.getElementById('coachingCard').style.display = 'block';
+  document.getElementById('coachingCard').style.border = `2px solid ${result.color}`;
+  document.getElementById('coachingCard').innerHTML = `
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center">
+      ${scoreGaugeSvg(score)}
+      <div style="flex:1;min-width:180px;text-align:left">
+        <p style="font-weight:800;color:${result.color};font-size:18px">진단: ${result.label}</p>
+        <div style="margin-top:12px">${nextTierProgressHtml(score)}</div>
+      </div>
+    </div>
+    <p style="font-weight:800;font-size:15px;margin-top:20px">이번주 실천 미션 (${doneCount}/${result.tips.length})</p>
+    <ul style="margin-top:10px;padding-left:0;list-style:none">
+      ${result.tips.map((tip,i) => `
+        <li class="checklist-item ${checkedMissions[i]?'done':''}" data-i="${i}">
+          <span class="box">${checkedMissions[i]?'✓':''}</span>${esc(tip)}
+        </li>`).join('')}
+    </ul>`;
+  document.querySelectorAll('#coachingCard .checklist-item').forEach(li => {
+    li.onclick = () => { const i=li.dataset.i; checkedMissions[i]=!checkedMissions[i]; renderCoachingCard(score, result); };
+  });
+}
+
+function renderPeerCard(score){
+  const card = document.getElementById('peerCard');
+  card.style.display = 'block';
+  const higher = score >= PEER_AVERAGE;
+  card.innerHTML = `
+    <p style="font-weight:800;font-size:16px">또래 비교</p>
+    <p style="font-size:14px;color:#6b7280;margin-top:4px">같은 나이대 평균 신용점수: ${PEER_AVERAGE}점</p>
+    <div style="background:#f3f4f6;border-radius:999px;height:10px;margin-top:10px;position:relative">
+      <div style="position:absolute;left:${Math.min(100,(PEER_AVERAGE/1000)*100)}%;top:-4px;width:2px;height:18px;background:#9ca3af"></div>
+      <div style="width:${Math.min(100,(score/1000)*100)}%;height:100%;border-radius:999px;background:${higher?'#16a34a':'#dc2626'}"></div>
+    </div>
+    <p style="font-size:14px;margin-top:10px">내 점수는 평균보다 <strong style="color:${higher?'#16a34a':'#dc2626'}">${Math.abs(score-PEER_AVERAGE)}점 ${higher?'높아요':'낮아요'}</strong></p>`;
+}
+
+function renderGrowthCard(){
+  const card = document.getElementById('growthCard');
+  if (!scoreHistory.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  const width=440, height=140, padX=24, padTop=20, padBottom=24;
+  const maxForChart = Math.max(1000, ...scoreHistory);
+  const maxScore = Math.max(...scoreHistory);
+  const points = scoreHistory.map((score,i) => {
+    const x = scoreHistory.length===1 ? width/2 : padX + (i*(width-padX*2))/(scoreHistory.length-1);
+    const y = padTop + (height-padTop-padBottom)*(1-score/maxForChart);
+    return {x,y,score};
+  });
+  const linePath = points.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+  const maxY = padTop + (height-padTop-padBottom)*(1-maxScore/maxForChart);
+  let svg = `<div style="display:flex;justify-content:space-between;align-items:baseline">
+    <p style="font-weight:800;font-size:16px;margin-bottom:12px">성장 기록</p>
+    <span style="font-size:13px;color:#6b7280">총 ${scoreHistory.length}회 기록</span>
+  </div>
+  <svg width="100%" viewBox="0 0 ${width} ${height}">
+    <line x1="${padX}" y1="${maxY}" x2="${width-padX}" y2="${maxY}" stroke="#9ca3af" stroke-dasharray="4 4" stroke-width="1"/>
+    <text x="${padX}" y="${maxY-6}" font-size="11" fill="#6b7280">최고점 ${maxScore}</text>
+    <path d="${linePath}" fill="none" stroke="#f97316" stroke-width="2"/>`;
+  points.forEach((p,i)=>{
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#f97316"/>
+      <text x="${p.x}" y="${p.y-10}" text-anchor="middle" font-size="12" font-weight="700" fill="#1f2937">${p.score}</text>`;
+    if (i>0){
+      const diff = p.score - points[i-1].score;
+      svg += `<text x="${(p.x+points[i-1].x)/2}" y="${(p.y+points[i-1].y)/2-8}" text-anchor="middle" font-size="11" font-weight="700" fill="${diff>=0?'#16a34a':'#dc2626'}">${diff>=0?'+':''}${diff}</text>`;
+    }
+    svg += `<text x="${p.x}" y="${height-4}" text-anchor="middle" font-size="11" fill="#9ca3af">#${i+1}</text>`;
+  });
+  svg += '</svg>';
+  card.innerHTML = svg;
+}
+
+document.getElementById('scoreSubmit').onclick = () => {
+  const input = document.getElementById('scoreInput');
+  const errEl = document.getElementById('scoreError');
+  const score = Number(input.value);
+  if (!score || score < 0 || score > 1000) {
+    errEl.style.display = 'block';
+    errEl.textContent = '1000 이내의 숫자를 입력해주세요';
+    input.classList.add('shake');
+    input.style.border = '2px solid #dc2626';
+    setTimeout(()=>input.classList.remove('shake'), 400);
+    return;
+  }
+  errEl.style.display = 'none';
+  input.style.border = '2px solid #e5e7eb';
+  checkedMissions = {};
+  scoreHistory.push(score);
+  const result = getCoaching(score);
+  renderCoachingCard(score, result);
+  renderPeerCard(score);
+  renderGrowthCard();
+};
+
+// ---------- CHALLENGE ----------
+const CHALLENGE_LEVELS = 30;
+const CHALLENGE_MISSIONS = [
+  '오늘 하루 지출을 메모장에 적어보기','이번 달 고정지출(구독 서비스) 목록 확인하기','가계부 앱 하나 설치해보기',
+  '이번 주 무지출 데이 1일 만들기','적금 상품 하나 검색해보기','신용점수 조회해보기','비상금 통장 개설 알아보기',
+  '이번 달 배달음식 횟수 세어보기','ETF가 무엇인지 한 문장으로 설명해보기','청년도약계좌 조건 확인해보기',
+];
+let challengeProgress = 0;
+let activeLevel = null;
+
+function renderChallenge(){
+  document.getElementById('challengeProgressText').textContent =
+    `${challengeProgress}/${CHALLENGE_LEVELS}단계 완료 · 한 단계씩 순서대로 통과해야 다음 단계가 열려요`;
+
+  const width=320, stepY=86, amplitude=95;
+  const height = CHALLENGE_LEVELS*stepY + 40;
+  const svg = document.getElementById('challengeSvg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+  const points = Array.from({length:CHALLENGE_LEVELS}, (_,i)=>{
+    const level = i+1;
+    const x = width/2 + Math.sin(i*0.9)*amplitude;
+    const y = 40 + i*stepY;
+    return {level,x,y};
+  });
+  const linePath = points.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+
+  let html = `<path d="${linePath}" fill="none" stroke="#e5e7eb" stroke-width="6" stroke-linecap="round"/>`;
+  points.forEach(p => {
+    const isDone = p.level <= challengeProgress;
+    const isCurrent = p.level === challengeProgress+1;
+    const isLocked = p.level > challengeProgress+1;
+    const fill = isDone ? '#16a34a' : isCurrent ? '#f97316' : '#e5e7eb';
+    html += `<g data-level="${p.level}" style="cursor:${isLocked?'default':'pointer'}">
+      <circle cx="${p.x}" cy="${p.y}" r="26" fill="${fill}"/>
+      ${isCurrent?`<circle cx="${p.x}" cy="${p.y}" r="32" fill="none" stroke="#f97316" stroke-width="2" opacity="0.4"/>`:''}
+      ${isDone
+        ? `<text x="${p.x}" y="${p.y+7}" text-anchor="middle" font-size="20" fill="#fff">✓</text>`
+        : `<text x="${p.x}" y="${p.y+6}" text-anchor="middle" font-size="14" font-weight="700" fill="${isLocked?'#9ca3af':'#fff'}">${p.level}</text>`}
+    </g>`;
+  });
+  svg.innerHTML = html;
+
+  svg.querySelectorAll('g[data-level]').forEach(g => {
+    const level = Number(g.dataset.level);
+    if (level <= challengeProgress+1){
+      g.onclick = () => openChallengeModal(level);
+    }
+  });
+}
+
+function openChallengeModal(level){
+  activeLevel = level;
+  document.getElementById('modalLevel').textContent = `${level}단계`;
+  document.getElementById('modalMission').textContent = CHALLENGE_MISSIONS[(level-1)%CHALLENGE_MISSIONS.length];
+  const isDone = level <= challengeProgress;
+  document.getElementById('modalDoneMsg').style.display = isDone ? 'block' : 'none';
+  document.getElementById('modalCompleteBtn').style.display = isDone ? 'none' : 'block';
+  document.getElementById('challengeModal').classList.add('open');
+}
+document.getElementById('modalCloseBtn').onclick = () => document.getElementById('challengeModal').classList.remove('open');
+document.getElementById('challengeModal').onclick = (e) => { if (e.target.id==='challengeModal') document.getElementById('challengeModal').classList.remove('open'); };
+document.getElementById('modalCompleteBtn').onclick = () => {
+  if (activeLevel !== null){
+    challengeProgress = Math.max(challengeProgress, activeLevel);
+    document.getElementById('challengeModal').classList.remove('open');
+    renderChallenge();
+  }
+};
+renderChallenge();
+
+// ---------- INVEST ----------
+const INITIAL_CASH = 1000000;
+const INITIAL_ASSETS = [
+  { symbol:'삼성전자', type:'주식', price:71000 },
+  { symbol:'카카오', type:'주식', price:42000 },
+  { symbol:'BTC', type:'코인', price:92000000 },
+  { symbol:'ETH', type:'코인', price:4200000 },
+];
+let prices = Object.fromEntries(INITIAL_ASSETS.map(a=>[a.symbol,a.price]));
+let cash = INITIAL_CASH;
+let holdings = {};
+let selectedAsset = INITIAL_ASSETS[0].symbol;
+
+function renderInvest(){
+  const holdingsValue = Object.entries(holdings).reduce((sum,[sym,h]) => sum + h.qty*(prices[sym]||0), 0);
+  const total = cash + holdingsValue;
+  const profit = total - INITIAL_CASH;
+  const profitPct = (profit/INITIAL_CASH)*100;
+
+  document.getElementById('investTotal').textContent = formatWon(total);
+  const profitEl = document.getElementById('investProfit');
+  profitEl.textContent = `${profit>=0?'+':''}${formatWon(profit)} (${profitPct>=0?'+':''}${profitPct.toFixed(1)}%)`;
+  profitEl.style.color = profit>=0 ? '#16a34a' : '#dc2626';
+  document.getElementById('investCash').textContent = formatWon(cash);
+  document.getElementById('investHoldingsValue').textContent = formatWon(holdingsValue);
+
+  document.getElementById('assetList').innerHTML = INITIAL_ASSETS.map(a => `
+    <div class="asset-row ${selectedAsset===a.symbol?'selected':''}" data-symbol="${a.symbol}">
+      <span><span style="font-weight:700;font-size:14px">${a.symbol}</span><span style="font-size:11px;color:#9ca3af;margin-left:6px">${a.type}</span></span>
+      <span style="font-weight:700;font-size:14px">${formatWon(prices[a.symbol])}</span>
+    </div>`).join('');
+  document.querySelectorAll('.asset-row').forEach(row => {
+    row.onclick = () => { selectedAsset = row.dataset.symbol; renderInvest(); };
+  });
+
+  document.getElementById('tradeTitle').textContent = `${selectedAsset} 매수/매도`;
+
+  const holdingsCard = document.getElementById('holdingsCard');
+  const entries = Object.entries(holdings);
+  holdingsCard.style.display = entries.length ? 'block' : 'none';
+  document.getElementById('holdingsList').innerHTML = entries.map(([sym,h]) => {
+    const cur = prices[sym];
+    const value = h.qty*cur;
+    const pnl = value - h.qty*h.avgPrice;
+    const pnlPct = (pnl/(h.qty*h.avgPrice))*100;
+    return `<div style="display:flex;justify-content:space-between;font-size:13px">
+      <span><strong>${sym}</strong> ${h.qty}개 · 평단 ${formatWon(h.avgPrice)}</span>
+      <span style="color:${pnl>=0?'#16a34a':'#dc2626'};font-weight:700">${formatWon(value)} (${pnlPct>=0?'+':''}${pnlPct.toFixed(1)}%)</span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('refreshPricesBtn').onclick = () => {
+  Object.keys(prices).forEach(sym => {
+    const change = 1 + (Math.random()*0.06 - 0.03);
+    prices[sym] = Math.max(1, Math.round(prices[sym]*change));
+  });
+  renderInvest();
+};
+
+document.getElementById('buyBtn').onclick = () => {
+  const qty = Number(document.getElementById('qtyInput').value);
+  const msg = document.getElementById('tradeMsg');
+  if (!qty || qty<=0) return;
+  const price = prices[selectedAsset];
+  const cost = price*qty;
+  if (cost > cash) { msg.textContent = '잔고가 부족해요'; return; }
+  cash -= cost;
+  const existing = holdings[selectedAsset];
+  const newQty = (existing?.qty||0) + qty;
+  const newAvg = existing ? (existing.avgPrice*existing.qty + cost)/newQty : price;
+  holdings[selectedAsset] = { qty:newQty, avgPrice:newAvg };
+  msg.textContent = `${selectedAsset} ${qty}개 매수 완료`;
+  renderInvest();
+};
+
+document.getElementById('sellBtn').onclick = () => {
+  const qty = Number(document.getElementById('qtyInput').value);
+  const msg = document.getElementById('tradeMsg');
+  const existing = holdings[selectedAsset];
+  if (!qty || qty<=0) return;
+  if (!existing || existing.qty < qty) { msg.textContent = '보유 수량이 부족해요'; return; }
+  const price = prices[selectedAsset];
+  cash += price*qty;
+  const remaining = existing.qty - qty;
+  if (remaining <= 0) delete holdings[selectedAsset];
+  else holdings[selectedAsset] = { qty:remaining, avgPrice:existing.avgPrice };
+  msg.textContent = `${selectedAsset} ${qty}개 매도 완료`;
+  renderInvest();
+};
+
+renderInvest();
+</script>
+</body>
+</html>

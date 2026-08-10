@@ -1,0 +1,110 @@
+const FEEDS: Record<string, { url: string; source: string }[]> = {
+  전체: [
+    { url: "https://www.yna.co.kr/rss/economy.xml", source: "연합뉴스" },
+    { url: "https://www.hankyung.com/feed/economy", source: "한국경제" },
+  ],
+  금융: [{ url: "https://www.hankyung.com/feed/finance", source: "한국경제" }],
+  증권: [{ url: "https://www.yna.co.kr/rss/market.xml", source: "연합뉴스" }],
+  산업: [{ url: "https://www.yna.co.kr/rss/industry.xml", source: "연합뉴스" }],
+  IT: [{ url: "https://www.hankyung.com/feed/it", source: "한국경제" }],
+  부동산: [{ url: "https://www.hankyung.com/feed/realestate", source: "한국경제" }],
+};
+
+function extractTag(xml: string, tag: string) {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
+  if (!match) return "";
+  return match[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/, "$1").trim();
+}
+
+function extractThumbnail(item: string) {
+  const media = item.match(/<media:content[^>]*url="([^"]+)"/);
+  if (media) return media[1];
+  const enclosure = item.match(/<enclosure[^>]*url="([^"]+)"[^>]*type="image/);
+  if (enclosure) return enclosure[1];
+  return "";
+}
+
+function parseFeed(xml: string, source: string) {
+  const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>/g) ?? [];
+  return items.slice(0, 8).map((item) => ({
+    title: extractTag(item, "title"),
+    link: extractTag(item, "link"),
+    pubDate: extractTag(item, "pubDate"),
+    thumbnail: extractThumbnail(item),
+    source,
+  }));
+}
+
+function parseGoogleNewsFeed(xml: string) {
+  const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>/g) ?? [];
+  return items.slice(0, 10).map((item) => {
+    const rawTitle = extractTag(item, "title");
+    const lastDash = rawTitle.lastIndexOf(" - ");
+    const title = lastDash > -1 ? rawTitle.slice(0, lastDash) : rawTitle;
+    const source = lastDash > -1 ? rawTitle.slice(lastDash + 3) : "Google 뉴스";
+    return {
+      title,
+      link: extractTag(item, "link"),
+      pubDate: extractTag(item, "pubDate"),
+      thumbnail: "",
+      source,
+    };
+  });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q")?.trim();
+
+  if (query) {
+    try {
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(
+        query
+      )}&hl=ko&gl=KR&ceid=KR:ko`;
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("bad response");
+      const xml = await res.text();
+      const items = parseGoogleNewsFeed(xml).filter((n) => n.title && n.link);
+      return Response.json({ items, categories: Object.keys(FEEDS) });
+    } catch {
+      return Response.json(
+        { items: [], categories: Object.keys(FEEDS), error: `"${query}" 뉴스를 불러오지 못했어요` },
+        { status: 502 }
+      );
+    }
+  }
+
+  const category = searchParams.get("category") ?? "전체";
+  const feeds = FEEDS[category] ?? FEEDS["전체"];
+
+  try {
+    const results = await Promise.all(
+      feeds.map(async (feed) => {
+        const res = await fetch(feed.url, {
+          headers: { "User-Agent": "Mozilla/5.0" },
+          cache: "no-store",
+          next: { revalidate: 0 },
+        });
+        if (!res.ok) return [];
+        const xml = await res.text();
+        return parseFeed(xml, feed.source);
+      })
+    );
+
+    const all = results
+      .flat()
+      .filter((n) => n.title && n.link)
+      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+      .slice(0, 8);
+
+    return Response.json({ items: all, categories: Object.keys(FEEDS) });
+  } catch {
+    return Response.json(
+      { items: [], categories: Object.keys(FEEDS), error: "뉴스를 불러오지 못했어요" },
+      { status: 502 }
+    );
+  }
+}
