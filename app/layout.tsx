@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CAMPUS AX-TON 스타터",
-  description: "멋쟁이사자처럼 CAMPUS AX-TON 실습용 스타터 템플릿",
+  title: "머니업 (MoneyUp) — 청년 금융습관 코칭 앱",
+  description: "신용점수 진단 → 맞춤 코칭 → 습관 챌린지 → 모의투자로 이어지는 사회초년생·20·30대를 위한 금융습관 코칭 서비스",
 };
 
 export default function RootLayout({
