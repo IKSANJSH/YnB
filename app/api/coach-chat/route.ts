@@ -1,10 +1,5 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.NVIDIA_API_KEY,
-  baseURL: "https://integrate.api.nvidia.com/v1",
-});
-
 const SYSTEM_PROMPT = `당신은 "머니업"이라는 청년 금융습관 코칭 앱의 AI 코치입니다.
 
 역할:
@@ -38,6 +33,11 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "잘못된 요청이에요" }, { status: 400 });
   }
+
+  const client = new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: "https://integrate.api.nvidia.com/v1",
+  });
 
   const encoder = new TextEncoder();
 
