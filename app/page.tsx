@@ -161,7 +161,7 @@ function NextTierProgress({ score }: { score: number }) {
           style={{
             width: `${pct}%`,
             height: "100%",
-            background: "#f97316",
+            background: "#3182F6",
             borderRadius: "999px",
             transition: "width 0.5s ease",
           }}
@@ -317,7 +317,7 @@ function MenuDrawer({
             fontSize: "15px",
             fontWeight: 800,
             color: "#fff",
-            background: "linear-gradient(135deg, #f97316, #ea580c)",
+            background: "#3182F6",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
@@ -381,9 +381,9 @@ function HomePage() {
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
       <section
         style={{
-          background: "#ffffff",
-          border: "2px solid #e5e7eb",
-          borderRadius: "12px",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+          border: "none",
+          borderRadius: "16px",
           padding: "20px 24px",
           textAlign: "left",
         }}
@@ -401,7 +401,7 @@ function HomePage() {
               flex: 1,
               padding: "9px 12px",
               fontSize: "13px",
-              border: "2px solid #e5e7eb",
+              border: "none",
               borderRadius: "8px",
             }}
           />
@@ -412,7 +412,7 @@ function HomePage() {
               fontSize: "13px",
               fontWeight: 700,
               color: "#fff",
-              background: "#f97316",
+              background: "#3182F6",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
@@ -430,9 +430,9 @@ function HomePage() {
                 borderRadius: "999px",
                 fontSize: "13px",
                 fontWeight: 700,
-                border: "1px solid #f97316",
-                background: "#fff7ed",
-                color: "#f97316",
+                border: "1px solid #3182F6",
+                background: "#EFF6FF",
+                color: "#3182F6",
               }}
             >
               🔍 &ldquo;{searchQuery}&rdquo;
@@ -456,9 +456,9 @@ function HomePage() {
                   fontSize: "13px",
                   fontWeight: 700,
                   cursor: "pointer",
-                  border: category === c ? "1px solid #16a34a" : "1px solid #e5e7eb",
-                  background: category === c ? "#f0fdf4" : "#fff",
-                  color: category === c ? "#16a34a" : "#374151",
+                  border: category === c ? "1px solid #3182F6" : "1px solid #e5e7eb",
+                  background: category === c ? "#EFF6FF" : "#fff",
+                  color: category === c ? "#3182F6" : "#374151",
                 }}
               >
                 {c}
@@ -533,9 +533,9 @@ function HomePage() {
 
       <section
         style={{
-          background: "#ffffff",
-          border: "2px solid #e5e7eb",
-          borderRadius: "12px",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+          border: "none",
+          borderRadius: "16px",
           padding: "20px 24px",
           textAlign: "left",
         }}
@@ -550,7 +550,7 @@ function HomePage() {
               <div
                 key={cat.key}
                 style={{
-                  border: "1px solid #fed7aa",
+                  border: "1px solid rgba(49, 130, 246, 0.35)",
                   borderRadius: "10px",
                   overflow: "hidden",
                 }}
@@ -563,7 +563,7 @@ function HomePage() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "14px 16px",
-                    background: isOpen ? "#fff7ed" : "#fff",
+                    background: isOpen ? "#EFF6FF" : "#fff",
                     border: "none",
                     cursor: "pointer",
                     textAlign: "left",
@@ -589,8 +589,8 @@ function HomePage() {
                       <div
                         key={i}
                         style={{
-                          background: "#fff7ed",
-                          border: "1px solid #fed7aa",
+                          background: "#EFF6FF",
+                          border: "1px solid rgba(49, 130, 246, 0.35)",
                           borderRadius: "8px",
                           padding: "12px",
                         }}
@@ -667,7 +667,7 @@ function CreditScorePage() {
               fontSize: "16px",
               fontWeight: 700,
               color: "#fff",
-              background: "#f97316",
+              background: "#3182F6",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
@@ -682,9 +682,9 @@ function CreditScorePage() {
       {result && latestScore !== undefined && (
         <div
           style={{
-            background: "#ffffff",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
             border: `2px solid ${result.color}`,
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "24px 28px",
             width: "100%",
             textAlign: "left",
@@ -750,9 +750,9 @@ function CreditScorePage() {
       {latestScore !== undefined && (
         <div
           style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+            border: "none",
+            borderRadius: "16px",
             padding: "20px 28px",
             width: "100%",
             textAlign: "left",
@@ -796,9 +796,9 @@ function CreditScorePage() {
       {history.length > 0 && (
         <div
           style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+            border: "none",
+            borderRadius: "16px",
             padding: "20px 28px",
             width: "100%",
             textAlign: "left",
@@ -832,10 +832,10 @@ function CreditScorePage() {
                 <text x={padX} y={maxY - 6} textAnchor="start" fontSize={11} fill="#6b7280">
                   최고점 {maxScore}
                 </text>
-                <path d={linePath} fill="none" stroke="#f97316" strokeWidth={2} />
+                <path d={linePath} fill="none" stroke="#3182F6" strokeWidth={2} />
                 {points.map((p, i) => (
                   <g key={i}>
-                    <circle cx={p.x} cy={p.y} r={4} fill="#f97316" />
+                    <circle cx={p.x} cy={p.y} r={4} fill="#3182F6" />
                     <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize={12} fontWeight={700} fill="#1f2937">
                       {p.score}
                     </text>
@@ -1023,9 +1023,9 @@ function QuizPage() {
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
       <div
         style={{
-          background: "#ffffff",
-          border: "2px solid #e5e7eb",
-          borderRadius: "12px",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+          border: "none",
+          borderRadius: "16px",
           padding: "16px 20px",
           width: "100%",
           textAlign: "left",
@@ -1042,9 +1042,9 @@ function QuizPage() {
       {!finished ? (
         <div
           style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+            border: "none",
+            borderRadius: "16px",
             padding: "24px 20px",
             width: "100%",
             textAlign: "center",
@@ -1111,7 +1111,7 @@ function QuizPage() {
                   fontSize: "15px",
                   fontWeight: 700,
                   color: "#fff",
-                  background: "#f97316",
+                  background: "#3182F6",
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
@@ -1125,16 +1125,16 @@ function QuizPage() {
       ) : (
         <div
           style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+            border: "none",
+            borderRadius: "16px",
             padding: "32px 20px",
             width: "100%",
             textAlign: "center",
           }}
         >
           <p style={{ fontSize: "15px", fontWeight: 700 }}>퀴즈 완료! 🎉</p>
-          <p style={{ fontSize: "36px", fontWeight: 800, marginTop: "10px", color: "#f97316" }}>
+          <p style={{ fontSize: "36px", fontWeight: 800, marginTop: "10px", color: "#3182F6" }}>
             {correctCount}/{questions.length}
           </p>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "10px" }}>
@@ -1152,7 +1152,7 @@ function QuizPage() {
               fontSize: "15px",
               fontWeight: 700,
               color: "#fff",
-              background: "#f97316",
+              background: "#3182F6",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
@@ -1332,7 +1332,7 @@ function AssetPicker({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#ffffff",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
           borderRadius: "16px",
           padding: "24px",
           maxWidth: "420px",
@@ -1342,7 +1342,7 @@ function AssetPicker({
           textAlign: "left",
         }}
       >
-        {stepLabel && <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>{stepLabel}</p>}
+        {stepLabel && <p style={{ fontSize: "13px", fontWeight: 800, color: "#3182F6" }}>{stepLabel}</p>}
         <p style={{ fontSize: "18px", fontWeight: 800, marginTop: stepLabel ? "10px" : 0 }}>관심종목을 5개 선택해주세요</p>
         <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
           {picked.length}/{MAX_PICKS}개 선택됨
@@ -1359,8 +1359,8 @@ function AssetPicker({
                   gap: "6px",
                   padding: "6px 10px",
                   borderRadius: "999px",
-                  background: "#fff7ed",
-                  border: "1px solid #fed7aa",
+                  background: "#EFF6FF",
+                  border: "1px solid rgba(49, 130, 246, 0.35)",
                   fontSize: "12px",
                   fontWeight: 700,
                   color: "#9a3412",
@@ -1386,9 +1386,9 @@ function AssetPicker({
                 borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: 700,
-                border: assetTab === t ? "2px solid #f97316" : "2px solid #e5e7eb",
-                background: assetTab === t ? "#fff7ed" : "#fff",
-                color: assetTab === t ? "#f97316" : "#374151",
+                border: assetTab === t ? "2px solid #3182F6" : "2px solid #e5e7eb",
+                background: assetTab === t ? "#EFF6FF" : "#fff",
+                color: assetTab === t ? "#3182F6" : "#374151",
                 cursor: "pointer",
               }}
             >
@@ -1409,7 +1409,7 @@ function AssetPicker({
             width: "100%",
             padding: "10px 12px",
             fontSize: "13px",
-            border: "2px solid #e5e7eb",
+            border: "none",
             borderRadius: "8px",
           }}
         />
@@ -1574,7 +1574,7 @@ function InvestOnboarding({
       >
         <div
           style={{
-            background: "#ffffff",
+            background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
             borderRadius: "16px",
             padding: "24px",
             maxWidth: "420px",
@@ -1584,7 +1584,7 @@ function InvestOnboarding({
             textAlign: "left",
           }}
         >
-          <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>1/3</p>
+          <p style={{ fontSize: "13px", fontWeight: 800, color: "#3182F6" }}>1/3</p>
           <p style={{ fontSize: "18px", fontWeight: 800, marginTop: "10px" }}>투자 모드를 선택해주세요</p>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
             나중에 종목을 편집해도 모드는 바뀌지 않아요
@@ -1597,9 +1597,9 @@ function InvestOnboarding({
               width: "100%",
               textAlign: "left",
               padding: "16px",
-              border: "2px solid #e5e7eb",
+              border: "none",
               borderRadius: "10px",
-              background: "#fff",
+              background: "#F2F4F6",
               cursor: "pointer",
             }}
           >
@@ -1616,9 +1616,9 @@ function InvestOnboarding({
               width: "100%",
               textAlign: "left",
               padding: "16px",
-              border: "2px solid #e5e7eb",
+              border: "none",
               borderRadius: "10px",
-              background: "#fff",
+              background: "#F2F4F6",
               cursor: "pointer",
             }}
           >
@@ -1647,7 +1647,7 @@ function InvestOnboarding({
     >
       <div
         style={{
-          background: "#ffffff",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
           borderRadius: "16px",
           padding: "24px",
           maxWidth: "420px",
@@ -1657,7 +1657,7 @@ function InvestOnboarding({
           textAlign: "left",
         }}
       >
-        <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>2/3</p>
+        <p style={{ fontSize: "13px", fontWeight: 800, color: "#3182F6" }}>2/3</p>
         <p style={{ fontSize: "18px", fontWeight: 800, marginTop: "10px" }}>모의투자 시작할 금액을 알려주세요</p>
         <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
           최소 {MIN_CASH.toLocaleString("ko-KR")}원 ~ 최대 {MAX_CASH.toLocaleString("ko-KR")}원
@@ -1690,7 +1690,7 @@ function InvestOnboarding({
             fontSize: "15px",
             fontWeight: 700,
             color: "#fff",
-            background: "#f97316",
+            background: "#3182F6",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
@@ -2039,7 +2039,7 @@ function InvestSession({
 
   return (
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+      <div style={{ background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)", border: "none", borderRadius: "16px", padding: "20px 24px" }}>
         <p style={{ fontSize: "13px", color: "#6b7280" }}>내 총자산</p>
         <p style={{ fontSize: "26px", fontWeight: 800, marginTop: "4px" }}>{formatWon(totalAssets)}</p>
         <p style={{ fontSize: "14px", marginTop: "6px", color: profit >= 0 ? "#16a34a" : "#dc2626", fontWeight: 700 }}>
@@ -2057,7 +2057,7 @@ function InvestSession({
         </div>
       </div>
 
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+      <div style={{ background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)", border: "none", borderRadius: "16px", padding: "20px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <p style={{ fontWeight: 800, fontSize: "16px" }}>시세</p>
           <div style={{ display: "flex", gap: "8px" }}>
@@ -2068,7 +2068,7 @@ function InvestSession({
                 fontWeight: 700,
                 color: "#6b7280",
                 background: "#fff",
-                border: "1px solid #e5e7eb",
+                border: "none",
                 borderRadius: "8px",
                 padding: "6px 12px",
                 cursor: "pointer",
@@ -2082,9 +2082,9 @@ function InvestSession({
               style={{
                 fontSize: "13px",
                 fontWeight: 700,
-                color: "#f97316",
-                background: "#fff7ed",
-                border: "1px solid #fed7aa",
+                color: "#3182F6",
+                background: "#EFF6FF",
+                border: "1px solid rgba(49, 130, 246, 0.35)",
                 borderRadius: "8px",
                 padding: "6px 12px",
                 cursor: loadingPrices ? "default" : "pointer",
@@ -2107,8 +2107,8 @@ function InvestSession({
                 alignItems: "center",
                 padding: "10px 12px",
                 borderRadius: "8px",
-                border: selected === a.symbol ? "2px solid #f97316" : "2px solid #f3f4f6",
-                background: selected === a.symbol ? "#fff7ed" : "#fff",
+                border: selected === a.symbol ? "2px solid #3182F6" : "2px solid #f3f4f6",
+                background: selected === a.symbol ? "#EFF6FF" : "#fff",
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -2134,7 +2134,7 @@ function InvestSession({
         </div>
       </div>
 
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+      <div style={{ background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)", border: "none", borderRadius: "16px", padding: "20px 24px" }}>
         <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>{selected} 매수/매도</p>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
@@ -2146,7 +2146,7 @@ function InvestSession({
               style={{
                 padding: "16px 68px 16px 18px",
                 fontSize: "20px",
-                border: "2px solid #e5e7eb",
+                border: "none",
                 borderRadius: "10px",
                 width: "180px",
               }}
@@ -2161,9 +2161,9 @@ function InvestSession({
                 transform: "translateY(-50%)",
                 fontSize: "13px",
                 fontWeight: 700,
-                color: "#f97316",
-                background: "#fff7ed",
-                border: "1px solid #fed7aa",
+                color: "#3182F6",
+                background: "#EFF6FF",
+                border: "1px solid rgba(49, 130, 246, 0.35)",
                 borderRadius: "6px",
                 padding: "5px 8px",
                 cursor: maxBuyQty <= 0 ? "default" : "pointer",
@@ -2209,7 +2209,7 @@ function InvestSession({
       </div>
 
       {Object.keys(holdings).length > 0 && (
-        <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+        <div style={{ background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)", border: "none", borderRadius: "16px", padding: "20px 24px" }}>
           <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>보유 종목</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {Object.entries(holdings).map(([symbol, h]) => {
@@ -2254,7 +2254,7 @@ function InvestSession({
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "#ffffff",
+              background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
               borderRadius: "16px",
               padding: "28px 24px",
               maxWidth: "360px",
@@ -2315,7 +2315,7 @@ function InvestSession({
               width: "300px",
               maxWidth: "calc(100vw - 48px)",
               background: "#ffffff",
-              border: "2px solid #fed7aa",
+              border: "2px solid rgba(49, 130, 246, 0.4)",
               borderRadius: "14px",
               padding: "14px",
               boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
@@ -2345,7 +2345,7 @@ function InvestSession({
                         fontSize: "13px",
                         lineHeight: 1.5,
                         whiteSpace: "pre-wrap",
-                        background: m.role === "user" ? "#f97316" : "#fff7ed",
+                        background: m.role === "user" ? "#3182F6" : "#EFF6FF",
                         color: m.role === "user" ? "#fff" : "#374151",
                         borderRadius: "10px",
                         padding: "8px 10px",
@@ -2365,7 +2365,7 @@ function InvestSession({
                       color: "#374151",
                       lineHeight: 1.5,
                       whiteSpace: "pre-wrap",
-                      background: "#fff7ed",
+                      background: "#EFF6FF",
                       borderRadius: "10px",
                       padding: "8px 10px",
                       margin: 0,
@@ -2388,7 +2388,7 @@ function InvestSession({
                   flex: 1,
                   padding: "8px 10px",
                   fontSize: "13px",
-                  border: "2px solid #e5e7eb",
+                  border: "none",
                   borderRadius: "8px",
                 }}
               />
@@ -2400,7 +2400,7 @@ function InvestSession({
                   fontSize: "13px",
                   fontWeight: 700,
                   color: "#fff",
-                  background: aiLoading || !aiInput.trim() ? "#fdba74" : "#f97316",
+                  background: aiLoading || !aiInput.trim() ? "#fdba74" : "#3182F6",
                   border: "none",
                   borderRadius: "8px",
                   cursor: aiLoading || !aiInput.trim() ? "default" : "pointer",
@@ -2417,7 +2417,7 @@ function InvestSession({
             width: "56px",
             height: "56px",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #f97316, #ea580c)",
+            background: "#3182F6",
             color: "#fff",
             border: "none",
             fontSize: "22px",
@@ -2505,9 +2505,9 @@ function AiCoachPage() {
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
       <div
         style={{
-          background: "#fff7ed",
-          border: "2px solid #fed7aa",
-          borderRadius: "12px",
+          background: "#EFF6FF",
+          border: "2px solid rgba(49, 130, 246, 0.4)",
+          borderRadius: "16px",
           padding: "14px 18px",
           textAlign: "left",
         }}
@@ -2521,9 +2521,9 @@ function AiCoachPage() {
 
       <div
         style={{
-          background: "#ffffff",
-          border: "2px solid #e5e7eb",
-          borderRadius: "12px",
+          background: "#ffffff", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
+          border: "none",
+          borderRadius: "16px",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
@@ -2542,7 +2542,7 @@ function AiCoachPage() {
                 fontSize: "14px",
                 lineHeight: 1.5,
                 whiteSpace: "pre-wrap",
-                background: m.role === "user" ? "#f97316" : "#f3f4f6",
+                background: m.role === "user" ? "#3182F6" : "#f3f4f6",
                 color: m.role === "user" ? "#fff" : "#1f2937",
               }}
             >
@@ -2566,7 +2566,7 @@ function AiCoachPage() {
             flex: 1,
             padding: "12px 14px",
             fontSize: "14px",
-            border: "2px solid #e5e7eb",
+            border: "none",
             borderRadius: "8px",
           }}
         />
@@ -2578,7 +2578,7 @@ function AiCoachPage() {
             fontSize: "14px",
             fontWeight: 700,
             color: "#fff",
-            background: sending || !input.trim() ? "#fdba74" : "#f97316",
+            background: sending || !input.trim() ? "#fdba74" : "#3182F6",
             border: "none",
             borderRadius: "8px",
             cursor: sending || !input.trim() ? "default" : "pointer",
