@@ -1432,21 +1432,23 @@ function QuizPage({ userId }: { userId: string | null }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontWeight: 800, fontSize: "16px" }}>🧠 투자 상식 O/X 퀴즈</p>
-          <button
-            onClick={() => setCalendarOpen(true)}
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#6b7280",
-              background: "#f2f2f7",
-              border: "none",
-              borderRadius: "8px",
-              padding: "5px 10px",
-              cursor: "pointer",
-            }}
-          >
-            📅 기록
-          </button>
+          {userId && (
+            <button
+              onClick={() => setCalendarOpen(true)}
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#6b7280",
+                background: "#f2f2f7",
+                border: "none",
+                borderRadius: "8px",
+                padding: "5px 10px",
+                cursor: "pointer",
+              }}
+            >
+              📅 기록
+            </button>
+          )}
         </div>
         {!finished && (
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}>
