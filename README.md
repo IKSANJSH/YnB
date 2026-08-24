@@ -51,22 +51,11 @@
 
 ## 시작하기
 
-```bash
-npm install
-npm run dev
-```
 
-브라우저에서 **http://localhost:3000** 접속.
+브라우저에서 **https://moneyupup.vercel.app** 접속.
 
-`.env.local` 파일에 아래 값을 채워야 합니다.
 
-```
-NVIDIA_API_KEY=your-nvidia-nim-api-key
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
 
-Supabase 프로젝트를 처음 연결한다면 `supabase/schema.sql`을 Supabase 대시보드의 SQL Editor에서 실행해 필요한 테이블(trades, morning_letters, ai_messages, portfolios)과 보안 정책을 생성하세요.
 
 ## 폴더 구성
 
