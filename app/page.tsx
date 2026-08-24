@@ -200,6 +200,21 @@ function TabBar({
   );
 }
 
+function translateAuthError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("invalid login credentials")) return "이메일 또는 비밀번호가 올바르지 않아요";
+  if (m.includes("email not confirmed")) return "이메일 인증이 아직 완료되지 않았어요";
+  if (m.includes("already registered")) return "이미 가입된 이메일이에요";
+  if (m.includes("password should be at least")) return "비밀번호는 6자 이상이어야 해요";
+  if (m.includes("email") && (m.includes("invalid") || m.includes("format"))) return "올바른 이메일 주소가 아니에요";
+  if (m.includes("token") && (m.includes("expired") || m.includes("invalid"))) return "인증번호가 만료되었거나 올바르지 않아요";
+  if (m.includes("rate limit")) return "요청 한도를 초과했어요. 잠시 후 다시 시도해주세요";
+  if (m.includes("security purposes") || (m.includes("after") && m.includes("second"))) return "보안을 위해 잠시 후 다시 시도해주세요";
+  if (m.includes("different from the old") || m.includes("same password")) return "새 비밀번호는 이전 비밀번호와 달라야 해요";
+  if (m.includes("network")) return "네트워크 오류가 발생했어요. 잠시 후 다시 시도해주세요";
+  return "오류가 발생했어요. 잠시 후 다시 시도해주세요";
+}
+
 function AuthModal({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [step, setStep] = useState<"form" | "otp">("form");
@@ -235,7 +250,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
           options: { data: { nickname: nickname.trim() } },
         });
         if (signUpError) {
-          setError(signUpError.message);
+          setError(translateAuthError(signUpError.message));
         } else {
           setStep("otp");
           setMessage(`${email.trim()}로 보낸 인증번호를 입력해주세요`);
@@ -243,7 +258,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (signInError) {
-          setError(signInError.message);
+          setError(translateAuthError(signInError.message));
         } else {
           onClose();
         }
@@ -268,7 +283,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
         type: "signup",
       });
       if (verifyError) {
-        setError(verifyError.message);
+        setError(translateAuthError(verifyError.message));
       } else {
         onClose();
       }
@@ -284,7 +299,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
     setMessage("");
     try {
       const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim() });
-      if (resendError) setError(resendError.message);
+      if (resendError) setError(translateAuthError(resendError.message));
       else setMessage("인증번호를 다시 보냈어요");
     } finally {
       setLoading(false);
@@ -506,7 +521,7 @@ function AccountModal({ user, onClose, onSignOut }: { user: User; onClose: () =>
     setNicknameLoading(true);
     setNicknameStatus("");
     const { error } = await supabase.auth.updateUser({ data: { nickname: nickname.trim() } });
-    setNicknameStatus(error ? error.message : "닉네임을 저장했어요");
+    setNicknameStatus(error ? translateAuthError(error.message) : "닉네임을 저장했어요");
     setNicknameLoading(false);
   };
 
@@ -519,7 +534,7 @@ function AccountModal({ user, onClose, onSignOut }: { user: User; onClose: () =>
     setPasswordLoading(true);
     setPasswordStatus("");
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setPasswordStatus(error ? error.message : "비밀번호를 변경했어요");
+    setPasswordStatus(error ? translateAuthError(error.message) : "비밀번호를 변경했어요");
     if (!error) setNewPassword("");
     setPasswordLoading(false);
   };
