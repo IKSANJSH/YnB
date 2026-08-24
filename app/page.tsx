@@ -15,6 +15,10 @@ import {
   fetchPortfolio,
   savePortfolio,
   deletePortfolio,
+  fetchQuizResults,
+  insertQuizResult,
+  insertQuizResults,
+  hasAnyQuizResults,
 } from "@/lib/db";
 
 
@@ -1210,12 +1214,171 @@ function pickQuizRound(): QuizQuestion[] {
   return shuffle(QUIZ_QUESTIONS).slice(0, QUIZ_ROUND_SIZE);
 }
 
-function QuizPage() {
+function QuizCalendarModal({ quizLog, onClose }: { quizLog: QuizResult[]; onClose: () => void }) {
+  const today = new Date();
+  const todayStr = localDateStr(today);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const resultsByDate = quizLog.reduce<Record<string, QuizResult[]>>((acc, r) => {
+    (acc[r.date] ??= []).push(r);
+    return acc;
+  }, {});
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+
+  const cells: { day: number; dateStr: string; inMonth: boolean }[] = [];
+  for (let i = 0; i < totalCells; i++) {
+    const dayOffset = i - startWeekday + 1;
+    const d = new Date(viewYear, viewMonth, dayOffset);
+    cells.push({ day: d.getDate(), dateStr: localDateStr(d), inMonth: d.getMonth() === viewMonth });
+  }
+
+  const goPrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
+  };
+  const goNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
+  };
+
+  const selectedResults = (resultsByDate[selectedDate] ?? []).slice().sort((a, b) => a.time.localeCompare(b.time));
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ position: "relative", background: "#fff", borderRadius: "20px", padding: "20px", width: "100%", maxWidth: "380px", maxHeight: "85vh", overflowY: "auto", textAlign: "left" }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="닫기"
+          style={{ position: "absolute", top: "14px", right: "14px", background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer", lineHeight: 1, padding: "4px" }}
+        >
+          ✕
+        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", marginBottom: "16px" }}>
+          <button onClick={goPrevMonth} style={{ background: "none", border: "none", fontSize: "18px", color: "#f97316", cursor: "pointer", padding: "4px 10px" }}>
+            ‹
+          </button>
+          <p style={{ fontWeight: 800, fontSize: "17px" }}>
+            {viewYear}년 {viewMonth + 1}월
+          </p>
+          <button onClick={goNextMonth} style={{ background: "none", border: "none", fontSize: "18px", color: "#f97316", cursor: "pointer", padding: "4px 10px" }}>
+            ›
+          </button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontSize: "12px", color: "#9ca3af", marginBottom: "6px" }}>
+          {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
+            <span key={w}>{w}</span>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: "4px" }}>
+          {cells.map((c, i) => {
+            const hasResult = !!resultsByDate[c.dateStr]?.length;
+            const isSelected = c.dateStr === selectedDate;
+            const isToday = c.dateStr === todayStr;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDate(c.dateStr)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "2px",
+                  padding: "6px 0",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  opacity: c.inMonth ? 1 : 0.3,
+                }}
+              >
+                <span
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "13px",
+                    fontWeight: isToday ? 800 : 500,
+                    background: isSelected ? "#f97316" : "transparent",
+                    color: isSelected ? "#fff" : isToday ? "#f97316" : "#1c1c1e",
+                  }}
+                >
+                  {c.day}
+                </span>
+                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: hasResult ? "#f97316" : "transparent" }} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: "18px", borderTop: "1px solid #e5e5ea", paddingTop: "14px" }}>
+          <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "8px" }}>{selectedDate} 퀴즈 기록</p>
+          {selectedResults.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "#9ca3af" }}>이 날짜엔 퀴즈 기록이 없어요</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {selectedResults.map((r) => {
+                const pct = Math.round((r.score / r.total) * 100);
+                return (
+                  <div key={r.id} style={{ background: "#f2f2f7", borderRadius: "12px", padding: "10px 12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: 700 }}>
+                      <span>{r.score}/{r.total}개 정답</span>
+                      <span style={{ color: "#6b7280", fontWeight: 500 }}>{r.time}</span>
+                    </div>
+                    <p style={{ fontSize: "20px", fontWeight: 800, color: "#f97316", marginTop: "4px" }}>{pct}%</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuizPage({ userId }: { userId: string | null }) {
   const [questions, setQuestions] = useState<QuizQuestion[]>(pickQuizRound);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<boolean | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [quizLog, setQuizLog] = useState<QuizResult[]>([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    if (userId) {
+      fetchQuizResults(userId).then((rows) => setQuizLog(rows.map((r, i) => ({ id: `${i}`, ...r }))));
+    } else {
+      setQuizLog(loadQuizLog());
+    }
+  }, [userId]);
 
   const current = questions[index];
   const isCorrect = selected !== null && selected === current.a;
@@ -1229,6 +1392,18 @@ function QuizPage() {
   const next = () => {
     if (index + 1 >= questions.length) {
       setFinished(true);
+      const now = new Date();
+      const result: QuizResult = {
+        id: `${now.getTime()}`,
+        date: localDateStr(now),
+        time: now.toTimeString().slice(0, 5),
+        score: correctCount,
+        total: questions.length,
+      };
+      const nextLog = [...quizLog, result];
+      setQuizLog(nextLog);
+      if (userId) void insertQuizResult(userId, { date: result.date, time: result.time, score: result.score, total: result.total });
+      else saveQuizLog(nextLog);
       return;
     }
     setIndex((i) => i + 1);
@@ -1255,13 +1430,32 @@ function QuizPage() {
           textAlign: "left",
         }}
       >
-        <p style={{ fontWeight: 800, fontSize: "16px" }}>🧠 투자 상식 O/X 퀴즈</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontWeight: 800, fontSize: "16px" }}>🧠 투자 상식 O/X 퀴즈</p>
+          <button
+            onClick={() => setCalendarOpen(true)}
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#6b7280",
+              background: "#f2f2f7",
+              border: "none",
+              borderRadius: "8px",
+              padding: "5px 10px",
+              cursor: "pointer",
+            }}
+          >
+            📅 기록
+          </button>
+        </div>
         {!finished && (
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}>
             {index + 1}/{questions.length}문제 · 맞은 개수 {correctCount}개
           </p>
         )}
       </div>
+
+      {calendarOpen && <QuizCalendarModal quizLog={quizLog} onClose={() => setCalendarOpen(false)} />}
 
       {!finished ? (
         <div
@@ -1360,6 +1554,9 @@ function QuizPage() {
           <p style={{ fontSize: "15px", fontWeight: 700 }}>퀴즈 완료! 🎉</p>
           <p style={{ fontSize: "36px", fontWeight: 800, marginTop: "10px", color: "#f97316" }}>
             {correctCount}/{questions.length}
+          </p>
+          <p style={{ fontSize: "16px", fontWeight: 700, marginTop: "4px", color: "#9a3412" }}>
+            정답률 {Math.round((correctCount / questions.length) * 100)}%
           </p>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "10px" }}>
             {correctCount >= 8
@@ -1497,6 +1694,34 @@ function loadTradeLog(): TradeRecord[] {
 function saveTradeLog(log: TradeRecord[]) {
   try {
     window.localStorage.setItem(TRADE_LOG_KEY, JSON.stringify(log));
+  } catch {
+    // ignore
+  }
+}
+
+type QuizResult = {
+  id: string;
+  date: string;
+  time: string;
+  score: number;
+  total: number;
+};
+
+const QUIZ_LOG_KEY = "moneyup_quiz_log";
+
+function loadQuizLog(): QuizResult[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(QUIZ_LOG_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveQuizLog(log: QuizResult[]) {
+  try {
+    window.localStorage.setItem(QUIZ_LOG_KEY, JSON.stringify(log));
   } catch {
     // ignore
   }
@@ -3673,10 +3898,23 @@ async function migrateLocalDataToAccount(userId: string) {
         await saveMorningLetterDb(userId, localLetter.date, localLetter.content);
       }
     }
+
+    const alreadyHasRemoteQuizResults = await hasAnyQuizResults(userId);
+    if (!alreadyHasRemoteQuizResults) {
+      const localQuizLog = loadQuizLog();
+      if (localQuizLog.length > 0) {
+        await insertQuizResults(
+          userId,
+          localQuizLog.map(({ date, time, score, total }) => ({ date, time, score, total }))
+        );
+      }
+    }
+
     // 이제 계정(클라우드)에 안전하게 옮겨졌으니, 로그아웃 후 게스트 화면에
     // 이전 계정의 개인 데이터가 그대로 보이는 걸 막기 위해 로컬 캐시를 지운다.
     window.localStorage.removeItem(TRADE_LOG_KEY);
     window.localStorage.removeItem(MORNING_LETTER_KEY);
+    window.localStorage.removeItem(QUIZ_LOG_KEY);
     window.localStorage.setItem(migratedKey, "1");
   } catch {
     // leave migratedKey unset so it retries on next login
@@ -3747,7 +3985,7 @@ export default function Home() {
       </div>
 
       {page === "home" && <HomePage userId={userId} />}
-      {page === "quiz" && <QuizPage />}
+      {page === "quiz" && <QuizPage userId={userId} />}
       {page === "invest" && <InvestPage userId={userId} onGoHome={() => setPage("home")} onModeChange={setInvestMode} />}
       {page === "ai" && <AiCoachPage userId={userId} />}
 

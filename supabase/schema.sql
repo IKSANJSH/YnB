@@ -45,10 +45,21 @@ create table if not exists portfolios (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists quiz_results (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  date text not null,
+  time text not null,
+  score numeric not null,
+  total numeric not null,
+  created_at timestamptz not null default now()
+);
+
 alter table trades enable row level security;
 alter table morning_letters enable row level security;
 alter table ai_messages enable row level security;
 alter table portfolios enable row level security;
+alter table quiz_results enable row level security;
 
 drop policy if exists "trades_owner" on trades;
 create policy "trades_owner" on trades
@@ -64,4 +75,8 @@ create policy "ai_messages_owner" on ai_messages
 
 drop policy if exists "portfolios_owner" on portfolios;
 create policy "portfolios_owner" on portfolios
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "quiz_results_owner" on quiz_results;
+create policy "quiz_results_owner" on quiz_results
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

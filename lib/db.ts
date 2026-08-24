@@ -109,3 +109,41 @@ export async function hasAnyTrades(userId: string): Promise<boolean> {
     .eq("user_id", userId);
   return !!count && count > 0;
 }
+
+export type DbQuizResult = {
+  date: string;
+  time: string;
+  score: number;
+  total: number;
+};
+
+export async function fetchQuizResults(userId: string): Promise<DbQuizResult[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("quiz_results")
+    .select("date, time, score, total")
+    .eq("user_id", userId)
+    .order("date", { ascending: true })
+    .order("time", { ascending: true });
+  if (error || !data) return [];
+  return data as DbQuizResult[];
+}
+
+export async function insertQuizResult(userId: string, result: DbQuizResult): Promise<void> {
+  if (!supabase) return;
+  await supabase.from("quiz_results").insert({ user_id: userId, ...result });
+}
+
+export async function insertQuizResults(userId: string, results: DbQuizResult[]): Promise<void> {
+  if (!supabase || results.length === 0) return;
+  await supabase.from("quiz_results").insert(results.map((r) => ({ user_id: userId, ...r })));
+}
+
+export async function hasAnyQuizResults(userId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { count } = await supabase
+    .from("quiz_results")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  return !!count && count > 0;
+}
