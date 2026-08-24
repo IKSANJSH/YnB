@@ -631,7 +631,7 @@ function MorningLetterModal({ userId }: { userId: string | null }) {
     const run = async () => {
       const today = localDateStr(new Date());
       const log: TradeRecord[] = userId
-        ? (await fetchTrades(userId)).map((t, i) => ({ id: `${i}`, ...t }))
+        ? (await fetchTrades(userId)).map((t, i) => ({ id: `${i}`, ...t, mode: t.mode as InvestMode | undefined }))
         : loadTradeLog();
       if (log.length === 0) {
         setHasHistory(false);
@@ -1472,6 +1472,7 @@ type TradeRecord = {
   qty: number;
   price: number;
   reason: string;
+  mode?: InvestMode;
 };
 
 function localDateStr(d: Date): string {
@@ -2117,43 +2118,11 @@ function TradeReasonModal({
   onConfirm: (reason: string) => void;
 }) {
   const [reason, setReason] = useState("");
-  const [step, setStep] = useState<"input" | "confirm">("input");
-  const [summary, setSummary] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const submitReason = async () => {
+  const submitReason = () => {
     const text = reason.trim();
     if (!text) return;
-    setLoading(true);
-    let result = "";
-    try {
-      const res = await fetch("/api/coach-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "user",
-              content: `사용자가 ${symbol}을(를) ${qty}개 ${action}하려는 이유로 이렇게 입력했어: "${text}". 이 내용을 자연스러운 한 문장으로 정리해서 "~이렇게 저장할까요?" 형태의 질문 한 문장만 출력해줘. 다른 말은 절대 덧붙이지 마.`,
-            },
-          ],
-        }),
-      });
-      if (res.ok && res.body) {
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          result += decoder.decode(value, { stream: true });
-        }
-      }
-    } catch {
-      // fall back below
-    }
-    setSummary(result.trim() || `"${text}"라고 저장할까요?`);
-    setLoading(false);
-    setStep("confirm");
+    onConfirm(text);
   };
 
   return (
@@ -2174,75 +2143,53 @@ function TradeReasonModal({
         onClick={(e) => e.stopPropagation()}
         style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
       >
-        {step === "input" ? (
-          <>
-            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "6px" }}>
-              {symbol} {qty}개 {action} 이유를 알려주세요
-            </p>
-            <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>
-              간단하게라도 이유를 남기면 나중에 투자 습관을 돌아볼 수 있어요
-            </p>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="예: 실적 발표 기대감에 매수"
-              autoFocus
-              style={{
-                width: "100%",
-                minHeight: "80px",
-                padding: "12px",
-                fontSize: "14px",
-                borderRadius: "10px",
-                border: "1px solid #e5e5ea",
-                resize: "none",
-                fontFamily: "inherit",
-              }}
-            />
-            <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
-              <button
-                onClick={onCancel}
-                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
-              >
-                취소
-              </button>
-              <button
-                onClick={submitReason}
-                disabled={!reason.trim() || loading}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: !reason.trim() || loading ? "#fdba74" : "#f97316",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                  cursor: !reason.trim() || loading ? "default" : "pointer",
-                }}
-              >
-                {loading ? "확인 중..." : "다음"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "14px", lineHeight: 1.5 }}>{summary}</p>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={() => setStep("input")}
-                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
-              >
-                아니오
-              </button>
-              <button
-                onClick={() => onConfirm(reason.trim())}
-                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
-              >
-                네
-              </button>
-            </div>
-          </>
-        )}
+        <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "6px" }}>
+          {symbol} {qty}개 {action} 이유를 알려주세요
+        </p>
+        <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>
+          간단하게라도 이유를 남기면 나중에 투자 습관을 돌아볼 수 있어요
+        </p>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="예: 실적 발표 기대감에 매수"
+          autoFocus
+          style={{
+            width: "100%",
+            minHeight: "80px",
+            padding: "12px",
+            fontSize: "14px",
+            borderRadius: "10px",
+            border: "1px solid #e5e5ea",
+            resize: "none",
+            fontFamily: "inherit",
+          }}
+        />
+        <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+          >
+            취소
+          </button>
+          <button
+            onClick={submitReason}
+            disabled={!reason.trim()}
+            style={{
+              flex: 1,
+              padding: "12px",
+              borderRadius: "10px",
+              border: "none",
+              background: !reason.trim() ? "#fdba74" : "#f97316",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "14px",
+              cursor: !reason.trim() ? "default" : "pointer",
+            }}
+          >
+            확인
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2493,11 +2440,27 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {selectedTrades.map((t) => (
                 <div key={t.id} style={{ background: "#f2f2f7", borderRadius: "12px", padding: "10px 12px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: 700 }}>
-                    <span style={{ color: t.action === "매수" ? "#dc2626" : "#2563eb" }}>
-                      {t.action} · {t.symbol}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", fontWeight: 700 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ color: t.action === "매수" ? "#dc2626" : "#2563eb" }}>
+                        {t.action} · {t.symbol}
+                      </span>
+                      {t.mode && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: "999px",
+                            color: t.mode === "virtual" ? "#7c3aed" : "#0369a1",
+                            background: t.mode === "virtual" ? "#f3e8ff" : "#e0f2fe",
+                          }}
+                        >
+                          {t.mode === "virtual" ? "🎲 가상모드" : "📡 실시간모드"}
+                        </span>
+                      )}
                     </span>
-                    <span style={{ color: "#6b7280" }}>{t.time}</span>
+                    <span style={{ color: "#6b7280", fontWeight: 500 }}>{t.time}</span>
                   </div>
                   <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
                     {t.qty}개 · {formatWon(t.price)}
@@ -2594,7 +2557,9 @@ function InvestSession({
 
   useEffect(() => {
     if (userId) {
-      fetchTrades(userId).then((rows) => setTradeLog(rows.map((t, i) => ({ id: `${i}`, ...t }))));
+      fetchTrades(userId).then((rows) =>
+        setTradeLog(rows.map((t, i) => ({ id: `${i}`, ...t, mode: t.mode as InvestMode | undefined })))
+      );
     } else {
       setTradeLog(loadTradeLog());
     }
@@ -2908,11 +2873,12 @@ function InvestSession({
       qty,
       price,
       reason,
+      mode,
     };
     const nextLog = [...tradeLog, record];
     setTradeLog(nextLog);
     if (userId) {
-      void insertTrade(userId, { date: record.date, time: record.time, symbol: record.symbol, action: record.action, qty: record.qty, price: record.price, reason: record.reason });
+      void insertTrade(userId, { date: record.date, time: record.time, symbol: record.symbol, action: record.action, qty: record.qty, price: record.price, reason: record.reason, mode: record.mode });
     } else {
       saveTradeLog(nextLog);
     }
@@ -3406,7 +3372,15 @@ function InvestSession({
   );
 }
 
-function InvestPage({ userId, onGoHome }: { userId: string | null; onGoHome: () => void }) {
+function InvestPage({
+  userId,
+  onGoHome,
+  onModeChange,
+}: {
+  userId: string | null;
+  onGoHome: () => void;
+  onModeChange: (mode: InvestMode | null) => void;
+}) {
   const [setup, setSetup] = useState<{
     cash: number;
     assets: InvestAsset[];
@@ -3415,6 +3389,11 @@ function InvestPage({ userId, onGoHome }: { userId: string | null; onGoHome: () 
   } | null>(null);
   const [checking, setChecking] = useState(!!userId);
   const [guestWarningOpen, setGuestWarningOpen] = useState(!userId);
+
+  useEffect(() => {
+    onModeChange(setup?.mode ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setup?.mode]);
 
   useEffect(() => {
     if (!userId) {
@@ -3673,7 +3652,7 @@ async function migrateLocalDataToAccount(userId: string) {
       if (localTrades.length > 0) {
         await insertTrades(
           userId,
-          localTrades.map(({ date, time, symbol, action, qty, price, reason }) => ({
+          localTrades.map(({ date, time, symbol, action, qty, price, reason, mode }) => ({
             date,
             time,
             symbol,
@@ -3681,6 +3660,7 @@ async function migrateLocalDataToAccount(userId: string) {
             qty,
             price,
             reason,
+            mode,
           }))
         );
       }
@@ -3708,6 +3688,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [investMode, setInvestMode] = useState<InvestMode | null>(null);
   const migratingRef = useRef<Set<string>>(new Set());
 
   const triggerMigration = (uid: string) => {
@@ -3731,7 +3712,12 @@ export default function Home() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const titles = { home: "머니업", quiz: "퀴즈", invest: "모의투자", ai: "AI 투자 조언" };
+  const titles = {
+    home: "머니업",
+    quiz: "퀴즈",
+    invest: investMode ? `모의투자 ${investMode === "virtual" ? "가상모드" : "실시간모드"}` : "모의투자",
+    ai: "AI 투자 조언",
+  };
 
   const handleAccountClick = () => {
     if (user) {
@@ -3762,7 +3748,7 @@ export default function Home() {
 
       {page === "home" && <HomePage userId={userId} />}
       {page === "quiz" && <QuizPage />}
-      {page === "invest" && <InvestPage userId={userId} onGoHome={() => setPage("home")} />}
+      {page === "invest" && <InvestPage userId={userId} onGoHome={() => setPage("home")} onModeChange={setInvestMode} />}
       {page === "ai" && <AiCoachPage userId={userId} />}
 
       <TabBar active={page} onNavigate={setPage} />

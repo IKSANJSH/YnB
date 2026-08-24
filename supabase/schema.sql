@@ -11,8 +11,11 @@ create table if not exists trades (
   qty numeric not null,
   price numeric not null,
   reason text not null,
+  mode text,
   created_at timestamptz not null default now()
 );
+
+alter table trades add column if not exists mode text;
 
 create table if not exists morning_letters (
   id uuid primary key default gen_random_uuid(),

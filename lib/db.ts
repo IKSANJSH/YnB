@@ -8,6 +8,7 @@ export type DbTrade = {
   qty: number;
   price: number;
   reason: string;
+  mode?: string;
 };
 
 export type DbAiMessage = {
@@ -20,7 +21,7 @@ export async function fetchTrades(userId: string): Promise<DbTrade[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("trades")
-    .select("date, time, symbol, action, qty, price, reason")
+    .select("date, time, symbol, action, qty, price, reason, mode")
     .eq("user_id", userId)
     .order("date", { ascending: true })
     .order("time", { ascending: true });
