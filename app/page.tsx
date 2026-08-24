@@ -1,8 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  fetchTrades,
+  insertTrade,
+  insertTrades,
+  fetchMorningLetter,
+  saveMorningLetterDb,
+  fetchAiMessages,
+  insertAiMessage,
+  hasAnyTrades,
+  fetchPortfolio,
+  savePortfolio,
+  deletePortfolio,
+} from "@/lib/db";
 
-const PEER_AVERAGE = 680;
 
 const FINANCE_INFO_CATEGORIES = [
   {
@@ -57,273 +71,532 @@ const FINANCE_INFO_CATEGORIES = [
   },
 ];
 
-function getTierInfo(score: number) {
-  if (score < 600) return { label: "관리 필요", color: "#dc2626" };
-  if (score < 750) return { label: "보통", color: "#d97706" };
-  return { label: "우수", color: "#16a34a" };
-}
-
-function getCoaching(score: number) {
-  if (score < 600) {
-    return {
-      label: "관리 필요",
-      color: "#dc2626",
-      tips: [
-        "연체 없이 소액이라도 매달 꾸준히 상환하기",
-        "고금리 대출부터 우선 상환 계획 세우기",
-        "신용카드 한도의 30% 이하로만 사용하기",
-      ],
-    };
-  }
-  if (score < 750) {
-    return {
-      label: "보통",
-      color: "#d97706",
-      tips: [
-        "자동이체로 고정지출 연체 방지하기",
-        "비상금 3개월치 생활비 목표로 저축 시작하기",
-        "불필요한 구독 서비스 점검하기",
-      ],
-    };
-  }
-  return {
-    label: "우수",
-    color: "#16a34a",
-    tips: [
-      "여유 자금 일부를 적립식 투자로 전환 고려",
-      "신용점수 유지 위해 기존 습관 그대로 유지",
-      "주변 친구에게 노하우 공유해보기",
-    ],
-  };
-}
-
-function ScoreGauge({ score }: { score: number }) {
-  const tier = getTierInfo(score);
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(score / 1000, 1);
-  const offset = circumference * (1 - progress);
-
-  return (
-    <div style={{ position: "relative", width: 140, height: 140 }}>
-      <svg width={140} height={140} viewBox="0 0 140 140">
-        <circle cx={70} cy={70} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={12} />
-        <circle
-          cx={70}
-          cy={70}
-          r={radius}
-          fill="none"
-          stroke={tier.color}
-          strokeWidth={12}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          transform="rotate(-90 70 70)"
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
-        />
-      </svg>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span style={{ fontSize: "24px", fontWeight: 800 }}>{score}</span>
-        <span style={{ fontSize: "12px", color: tier.color, fontWeight: 700 }}>
-          {tier.label}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function NextTierProgress({ score }: { score: number }) {
-  const nextGoal = score < 600 ? 600 : score < 750 ? 750 : 1000;
-  const prevGoal = score < 600 ? 0 : score < 750 ? 600 : 750;
-  const pct = Math.min(
-    100,
-    Math.round(((score - prevGoal) / (nextGoal - prevGoal)) * 100)
-  );
-  const remaining = Math.max(0, nextGoal - score);
-
-  return (
-    <div style={{ width: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280" }}>
-        <span>다음 등급까지</span>
-        <span>{remaining === 0 ? "최고 등급 달성!" : `${remaining}점 남음`}</span>
-      </div>
-      <div style={{ background: "#f3f4f6", borderRadius: "999px", height: "10px", marginTop: "6px", overflow: "hidden" }}>
-        <div
-          style={{
-            width: `${pct}%`,
-            height: "100%",
-            background: "#f97316",
-            borderRadius: "999px",
-            transition: "width 0.5s ease",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Header({ onMenuClick, title }: { onMenuClick: () => void; title: string }) {
+function Header({
+  title,
+  userEmail,
+  onAccountClick,
+}: {
+  title: string;
+  userEmail?: string | null;
+  onAccountClick?: () => void;
+}) {
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "16px",
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
         width: "100%",
         maxWidth: "640px",
         marginBottom: "8px",
+        padding: "10px 4px 14px",
+        background: "rgba(242,242,247,0.85)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
       }}
     >
-      <button
-        onClick={onMenuClick}
-        aria-label="메뉴 열기"
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: "8px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-        }}
-      >
-        <span style={{ width: "22px", height: "2px", background: "#1f2937", borderRadius: "2px" }} />
-        <span style={{ width: "22px", height: "2px", background: "#1f2937", borderRadius: "2px" }} />
-        <span style={{ width: "22px", height: "2px", background: "#1f2937", borderRadius: "2px" }} />
-      </button>
-      <h1 style={{ fontSize: "20px", fontWeight: 800 }}>{title}</h1>
+      <h1 style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textAlign: "left" }}>
+        {title}
+      </h1>
+      {onAccountClick && (
+        <button
+          onClick={onAccountClick}
+          title={userEmail ? "회원정보 수정" : "로그인"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "6px 12px",
+            borderRadius: "999px",
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            fontSize: "13px",
+            fontWeight: 700,
+            color: userEmail ? "#374151" : "#f97316",
+            cursor: "pointer",
+          }}
+        >
+          {userEmail ? (
+            <>
+              <span style={{ fontSize: "15px" }}>👤</span>
+              <span style={{ maxWidth: "90px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userEmail}
+              </span>
+            </>
+          ) : (
+            "로그인"
+          )}
+        </button>
+      )}
     </div>
   );
 }
 
-function MenuDrawer({
-  open,
-  onClose,
+const TAB_ITEMS: { key: "home" | "quiz" | "invest" | "ai"; icon: string; label: string }[] = [
+  { key: "home", icon: "🏠", label: "홈" },
+  { key: "quiz", icon: "❓", label: "퀴즈" },
+  { key: "invest", icon: "📈", label: "모의투자" },
+  { key: "ai", icon: "✨", label: "AI 조언" },
+];
+
+function TabBar({
+  active,
   onNavigate,
 }: {
-  open: boolean;
-  onClose: () => void;
-  onNavigate: (page: "home" | "credit" | "quiz" | "invest" | "ai") => void;
+  active: "home" | "quiz" | "invest" | "ai";
+  onNavigate: (page: "home" | "quiz" | "invest" | "ai") => void;
 }) {
-  if (!open) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 30,
+        display: "flex",
+        justifyContent: "center",
+        background: "rgba(255,255,255,0.9)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderTop: "1px solid rgba(60,60,67,0.12)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      <div style={{ display: "flex", width: "100%", maxWidth: "640px" }}>
+        {TAB_ITEMS.map((item) => {
+          const isActive = active === item.key;
+          return (
+            <button
+              key={item.key}
+              onClick={() => onNavigate(item.key)}
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "8px 2px 10px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "2px",
+                color: isActive ? "#f97316" : "#8e8e93",
+              }}
+            >
+              <span style={{ fontSize: "20px", lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ fontSize: "11px", fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AuthModal({ onClose }: { onClose: () => void }) {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [step, setStep] = useState<"form" | "otp">("form");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const submit = async () => {
+    if (!supabase) {
+      setError("Supabase 설정이 아직 안 되어 있어요. .env.local에 키를 추가해주세요.");
+      return;
+    }
+    if (!email.trim() || !password) {
+      setError("이메일과 비밀번호를 입력해주세요");
+      return;
+    }
+    if (mode === "signup" && !nickname.trim()) {
+      setError("닉네임을 입력해주세요");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      if (mode === "signup") {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { nickname: nickname.trim() } },
+        });
+        if (signUpError) {
+          setError(signUpError.message);
+        } else {
+          setStep("otp");
+          setMessage(`${email.trim()}로 보낸 인증번호를 입력해주세요`);
+        }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (signInError) {
+          setError(signInError.message);
+        } else {
+          onClose();
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyCode = async () => {
+    if (!supabase) return;
+    if (!otp.trim()) {
+      setError("인증번호를 입력해주세요");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otp.trim(),
+        type: "signup",
+      });
+      if (verifyError) {
+        setError(verifyError.message);
+      } else {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (!supabase) return;
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+      if (resendError) setError(resendError.message);
+      else setMessage("인증번호를 다시 보냈어요");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === "otp") {
+    return (
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          zIndex: 80,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: "#fff", borderRadius: "18px", padding: "24px", width: "100%", maxWidth: "360px", textAlign: "left" }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <p style={{ fontWeight: 800, fontSize: "17px" }}>인증번호 입력</p>
+            <button onClick={onClose} aria-label="닫기" style={{ background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer" }}>
+              ✕
+            </button>
+          </div>
+
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={10}
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={(e) => e.key === "Enter" && verifyCode()}
+            placeholder="인증번호"
+            autoFocus
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              fontSize: "18px",
+              letterSpacing: "0.2em",
+              textAlign: "center",
+              borderRadius: "10px",
+              border: "1px solid #e5e7eb",
+            }}
+          />
+
+          {error && <p style={{ fontSize: "12px", color: "#dc2626", marginTop: "10px" }}>{error}</p>}
+          {message && <p style={{ fontSize: "12px", color: "#16a34a", marginTop: "10px" }}>{message}</p>}
+
+          <button
+            onClick={verifyCode}
+            disabled={loading}
+            style={{
+              marginTop: "16px",
+              width: "100%",
+              padding: "13px",
+              borderRadius: "10px",
+              border: "none",
+              background: loading ? "#fdba74" : "#f97316",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "14px",
+              cursor: loading ? "default" : "pointer",
+            }}
+          >
+            {loading ? "확인 중..." : "확인"}
+          </button>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "12px" }}>
+            <button
+              onClick={() => {
+                setStep("form");
+                setOtp("");
+                setError("");
+                setMessage("");
+              }}
+              style={{ background: "none", border: "none", fontSize: "12px", color: "#9ca3af", cursor: "pointer" }}
+            >
+              ← 이메일 다시 입력
+            </button>
+            <button
+              onClick={resendCode}
+              disabled={loading}
+              style={{ background: "none", border: "none", fontSize: "12px", color: "#f97316", fontWeight: 700, cursor: "pointer" }}
+            >
+              인증번호 재전송
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.35)",
-        zIndex: 20,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 80,
         display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "240px",
-          height: "100%",
-          background: "#ffffff",
-          boxShadow: "2px 0 12px rgba(0,0,0,0.15)",
-          padding: "24px 16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
+        style={{ background: "#fff", borderRadius: "18px", padding: "24px", width: "100%", maxWidth: "360px", textAlign: "left" }}
       >
-        <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px", paddingLeft: "8px" }}>메뉴</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <p style={{ fontWeight: 800, fontSize: "17px" }}>{mode === "login" ? "로그인" : "회원가입"}</p>
+          <button onClick={onClose} aria-label="닫기" style={{ background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer" }}>
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: "6px", marginBottom: "16px", background: "#f2f2f7", borderRadius: "10px", padding: "4px" }}>
+          {(["login", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                setMode(m);
+                setError("");
+                setMessage("");
+              }}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: "8px",
+                border: "none",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                background: mode === m ? "#fff" : "transparent",
+                color: mode === m ? "#1c1c1e" : "#8e8e93",
+                boxShadow: mode === m ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
+              }}
+            >
+              {m === "login" ? "로그인" : "회원가입"}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {mode === "signup" && (
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="닉네임"
+              style={{ padding: "12px 14px", fontSize: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}
+            />
+          )}
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일"
+            style={{ padding: "12px 14px", fontSize: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            placeholder="비밀번호 (6자 이상)"
+            style={{ padding: "12px 14px", fontSize: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}
+          />
+        </div>
+
+        {error && <p style={{ fontSize: "12px", color: "#dc2626", marginTop: "10px" }}>{error}</p>}
+        {message && <p style={{ fontSize: "12px", color: "#16a34a", marginTop: "10px" }}>{message}</p>}
+
         <button
-          onClick={() => onNavigate("home")}
+          onClick={submit}
+          disabled={loading}
           style={{
-            textAlign: "left",
-            padding: "12px 8px",
-            fontSize: "15px",
-            fontWeight: 700,
-            background: "none",
+            marginTop: "16px",
+            width: "100%",
+            padding: "13px",
+            borderRadius: "10px",
             border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-        >
-          홈
-        </button>
-        <button
-          onClick={() => onNavigate("credit")}
-          style={{
-            textAlign: "left",
-            padding: "12px 8px",
-            fontSize: "15px",
-            fontWeight: 700,
-            background: "none",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-        >
-          신용점수 분석
-        </button>
-        <button
-          onClick={() => onNavigate("quiz")}
-          style={{
-            textAlign: "left",
-            padding: "12px 8px",
-            fontSize: "15px",
-            fontWeight: 700,
-            background: "none",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-        >
-          퀴즈
-        </button>
-        <button
-          onClick={() => onNavigate("invest")}
-          style={{
-            textAlign: "left",
-            padding: "12px 8px",
-            fontSize: "15px",
-            fontWeight: 700,
-            background: "none",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f3f4f6")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-        >
-          모의투자
-        </button>
-        <button
-          onClick={() => onNavigate("ai")}
-          style={{
-            textAlign: "left",
-            padding: "12px 8px",
-            marginTop: "6px",
-            fontSize: "15px",
-            fontWeight: 800,
+            background: loading ? "#fdba74" : "#f97316",
             color: "#fff",
-            background: "linear-gradient(135deg, #f97316, #ea580c)",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
+            fontWeight: 700,
+            fontSize: "14px",
+            cursor: loading ? "default" : "pointer",
           }}
         >
-          ✨ AI 투자 조언
+          {loading ? "처리 중..." : mode === "login" ? "로그인" : "회원가입"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AccountModal({ user, onClose, onSignOut }: { user: User; onClose: () => void; onSignOut: () => void }) {
+  const [nickname, setNickname] = useState((user.user_metadata?.nickname as string) ?? "");
+  const [nicknameStatus, setNicknameStatus] = useState("");
+  const [nicknameLoading, setNicknameLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const saveNickname = async () => {
+    if (!supabase) return;
+    if (!nickname.trim()) {
+      setNicknameStatus("닉네임을 입력해주세요");
+      return;
+    }
+    setNicknameLoading(true);
+    setNicknameStatus("");
+    const { error } = await supabase.auth.updateUser({ data: { nickname: nickname.trim() } });
+    setNicknameStatus(error ? error.message : "닉네임을 저장했어요");
+    setNicknameLoading(false);
+  };
+
+  const changePassword = async () => {
+    if (!supabase) return;
+    if (newPassword.length < 6) {
+      setPasswordStatus("비밀번호는 6자 이상이어야 해요");
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordStatus("");
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordStatus(error ? error.message : "비밀번호를 변경했어요");
+    if (!error) setNewPassword("");
+    setPasswordLoading(false);
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 80,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: "18px", padding: "24px", width: "100%", maxWidth: "360px", textAlign: "left" }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <p style={{ fontWeight: 800, fontSize: "17px" }}>회원정보 수정</p>
+          <button onClick={onClose} aria-label="닫기" style={{ background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer" }}>
+            ✕
+          </button>
+        </div>
+        <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "20px" }}>{user.email}</p>
+
+        <p style={{ fontSize: "13px", fontWeight: 700, marginBottom: "8px" }}>닉네임</p>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            type="text"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="닉네임"
+            style={{ flex: 1, padding: "10px 12px", fontSize: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}
+          />
+          <button
+            onClick={saveNickname}
+            disabled={nicknameLoading}
+            style={{ padding: "10px 16px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "13px", cursor: nicknameLoading ? "default" : "pointer" }}
+          >
+            저장
+          </button>
+        </div>
+        {nicknameStatus && (
+          <p style={{ fontSize: "12px", color: nicknameStatus === "닉네임을 저장했어요" ? "#16a34a" : "#dc2626", marginTop: "8px" }}>{nicknameStatus}</p>
+        )}
+
+        <p style={{ fontSize: "13px", fontWeight: 700, marginTop: "22px", marginBottom: "8px" }}>비밀번호 변경</p>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && changePassword()}
+            placeholder="새 비밀번호 (6자 이상)"
+            style={{ flex: 1, padding: "10px 12px", fontSize: "14px", borderRadius: "10px", border: "1px solid #e5e7eb" }}
+          />
+          <button
+            onClick={changePassword}
+            disabled={passwordLoading}
+            style={{ padding: "10px 16px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "13px", cursor: passwordLoading ? "default" : "pointer" }}
+          >
+            변경
+          </button>
+        </div>
+        {passwordStatus && (
+          <p style={{ fontSize: "12px", color: passwordStatus === "비밀번호를 변경했어요" ? "#16a34a" : "#dc2626", marginTop: "8px" }}>{passwordStatus}</p>
+        )}
+
+        <button
+          onClick={() => {
+            onSignOut();
+            onClose();
+          }}
+          style={{ marginTop: "24px", width: "100%", padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+        >
+          로그아웃
         </button>
       </div>
     </div>
@@ -344,7 +617,209 @@ function timeAgo(pubDate: string) {
 
 const NEWS_CATEGORIES = ["전체", "금융", "증권", "산업", "IT", "부동산"];
 
-function HomePage() {
+function MorningLetterModal({ userId }: { userId: string | null }) {
+  const [hasHistory, setHasHistory] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "ready">("idle");
+  const [content, setContent] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const didInit = useRef(false);
+
+  useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
+
+    const run = async () => {
+      const today = localDateStr(new Date());
+      const log: TradeRecord[] = userId
+        ? (await fetchTrades(userId)).map((t, i) => ({ id: `${i}`, ...t }))
+        : loadTradeLog();
+      if (log.length === 0) {
+        setHasHistory(false);
+        return;
+      }
+      setHasHistory(true);
+
+      const seenKey = `${MORNING_LETTER_SEEN_PREFIX}${today}`;
+      const alreadySeenToday = !!window.localStorage.getItem(seenKey);
+
+      const localCached = loadMorningLetter();
+      const cachedContent = userId
+        ? await fetchMorningLetter(userId, today)
+        : localCached && localCached.date === today
+        ? localCached.content
+        : null;
+      if (cachedContent) {
+        setContent(cachedContent);
+        setStatus("ready");
+        if (!alreadySeenToday) {
+          setModalOpen(true);
+          window.localStorage.setItem(seenKey, "1");
+        }
+        return;
+      }
+
+      setStatus("loading");
+      setModalOpen(true);
+      let finalText = "";
+      try {
+        const [usNews, krNews] = await Promise.all([
+          fetchNewsHeadlines("미국 경제", "미국 경제"),
+          fetchNewsHeadlines("국내 경제", "국내 경제"),
+        ]);
+        const holdings = deriveHoldingsFromLog(log);
+        const recentSymbols = Array.from(
+          new Set(
+            log
+              .slice()
+              .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
+              .map((t) => t.symbol)
+          )
+        ).slice(0, 5);
+        const symbolNewsParts = await Promise.all(recentSymbols.map((s) => fetchNewsHeadlines(s)));
+        const recentTrades = log
+          .slice()
+          .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+          .slice(-10);
+        const tradesText = recentTrades
+          .map((t) => `- ${t.date} ${t.time} ${t.action} ${t.symbol} ${t.qty}개 @ ${formatWon(t.price)} (이유: ${t.reason})`)
+          .join("\n");
+        const holdingsText = Object.keys(holdings).length
+          ? Object.entries(holdings)
+              .map(([s, q]) => `${s} ${q}개`)
+              .join(", ")
+          : "없음";
+
+        const prompt = `오늘은 ${today}이야. 사용자에게 매일 아침 보내는 투자 습관 편지를 써줘.
+
+[최근 미국 경제 뉴스]${usNews || "\n(뉴스 없음)"}
+
+[최근 국내 경제 뉴스]${krNews || "\n(뉴스 없음)"}
+
+[현재 보유 종목]
+${holdingsText}
+
+[보유·거래 종목 관련 최근 뉴스]${symbolNewsParts.join("") || "\n(뉴스 없음)"}
+
+[최근 매수·매도 기록과 이유]
+${tradesText || "(거래 기록 없음)"}
+
+위 정보를 바탕으로 아래 3개 항목으로 구성된 편지를 써줘:
+1. 잘한 점
+2. 아쉬운 점
+3. 개선하면 좋은 점
+
+작성 시 유의사항:
+- 수익률 결과만으로 평가하지 말고, 뉴스로 확인되는 시장 상황 변화와 사용자가 적은 매수·매도 이유가 서로 논리적으로 맞아떨어지는지를 중요하게 평가해줘.
+- 특정 종목을 지금 사거나 팔라고 직접 추천하지 마.
+- 편지처럼 다정하고 담백한 톤으로, 인사로 시작해줘.
+- 각 항목은 2~4문장 정도로 구체적으로 써줘.`;
+
+        const res = await fetch("/api/coach-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+        });
+        let text = "";
+        if (res.ok && res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            text += decoder.decode(value, { stream: true });
+          }
+        }
+        finalText = text.trim();
+      } catch {
+        finalText = "";
+      }
+      if (!finalText) finalText = "오늘은 편지를 불러오지 못했어요. 잠시 후 다시 열어봐 주세요.";
+      setContent(finalText);
+      setStatus("ready");
+      if (userId) await saveMorningLetterDb(userId, today, finalText);
+      else saveMorningLetter({ date: today, content: finalText });
+      window.localStorage.setItem(seenKey, "1");
+    };
+
+    void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!hasHistory) return null;
+
+  return (
+    <>
+      <button
+        onClick={() => setModalOpen(true)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          width: "100%",
+          textAlign: "left",
+          background: "linear-gradient(135deg, #fff7ed, #ffedd5)",
+          border: "1px solid #fed7aa",
+          borderRadius: "14px",
+          padding: "14px 16px",
+          cursor: "pointer",
+        }}
+      >
+        <span style={{ fontSize: "20px" }}>☀️</span>
+        <span style={{ fontWeight: 700, fontSize: "14px", color: "#9a3412" }}>
+          {status === "loading" ? "오늘의 투자 편지를 쓰는 중이에요..." : "오늘의 투자 편지 보기"}
+        </span>
+      </button>
+
+      {modalOpen && (
+        <div
+          onClick={() => setModalOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 70,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "22px",
+              width: "100%",
+              maxWidth: "420px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <p style={{ fontWeight: 800, fontSize: "16px" }}>☀️ 오늘의 투자 편지</p>
+              <button
+                onClick={() => setModalOpen(false)}
+                aria-label="편지 닫기"
+                style={{ background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+            {status === "loading" ? (
+              <p style={{ fontSize: "13px", color: "#9ca3af" }}>편지를 쓰는 중이에요...</p>
+            ) : (
+              <p style={{ fontSize: "14px", lineHeight: 1.7, whiteSpace: "pre-wrap", color: "#374151" }}>{content}</p>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function HomePage({ userId }: { userId: string | null }) {
   const [category, setCategory] = useState("전체");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -379,10 +854,12 @@ function HomePage() {
 
   return (
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
+      <MorningLetterModal userId={userId} />
+
       <section
         style={{
           background: "#ffffff",
-          border: "2px solid #e5e7eb",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
           borderRadius: "12px",
           padding: "20px 24px",
           textAlign: "left",
@@ -401,7 +878,7 @@ function HomePage() {
               flex: 1,
               padding: "9px 12px",
               fontSize: "13px",
-              border: "2px solid #e5e7eb",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
               borderRadius: "8px",
             }}
           />
@@ -534,7 +1011,7 @@ function HomePage() {
       <section
         style={{
           background: "#ffffff",
-          border: "2px solid #e5e7eb",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
           borderRadius: "12px",
           padding: "20px 24px",
           textAlign: "left",
@@ -612,259 +1089,6 @@ function HomePage() {
   );
 }
 
-function CreditScorePage() {
-  const [input, setInput] = useState("");
-  const [result, setResult] = useState<ReturnType<typeof getCoaching> | null>(null);
-  const [shake, setShake] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [history, setHistory] = useState<number[]>([]);
-  const [checked, setChecked] = useState<Record<number, boolean>>({});
-
-  const handleSubmit = () => {
-    const score = Number(input);
-    if (!score || score < 0 || score > 1000) {
-      setErrorMsg("1000 이내의 숫자를 입력해주세요");
-      setShake(true);
-      setTimeout(() => setShake(false), 400);
-      return;
-    }
-    setErrorMsg("");
-    setResult(getCoaching(score));
-    setChecked({});
-    setHistory((prev) => [...prev, score]);
-  };
-
-  const latestScore = history[history.length - 1];
-  const maxForChart = Math.max(1000, ...history);
-  const doneCount = Object.values(checked).filter(Boolean).length;
-
-  return (
-    <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-      <p style={{ fontSize: "15px", color: "#6b7280", textAlign: "center" }}>
-        다른 앱(토스, 뱅크샐러드 등)에서 확인한 신용점수를 입력해보세요
-      </p>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <input
-            type="number"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="예: 780"
-            className={shake ? "shake" : ""}
-            style={{
-              padding: "12px 16px",
-              fontSize: "16px",
-              border: `2px solid ${errorMsg ? "#dc2626" : "#e5e7eb"}`,
-              borderRadius: "8px",
-              width: "160px",
-            }}
-          />
-          <button
-            onClick={handleSubmit}
-            style={{
-              padding: "12px 20px",
-              fontSize: "16px",
-              fontWeight: 700,
-              color: "#fff",
-              background: "#f97316",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-            }}
-          >
-            코칭 받기
-          </button>
-        </div>
-        {errorMsg && <p style={{ color: "#dc2626", fontSize: "14px" }}>{errorMsg}</p>}
-      </div>
-
-      {result && latestScore !== undefined && (
-        <div
-          style={{
-            background: "#ffffff",
-            border: `2px solid ${result.color}`,
-            borderRadius: "12px",
-            padding: "24px 28px",
-            width: "100%",
-            textAlign: "left",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
-            <ScoreGauge score={latestScore} />
-            <div style={{ flex: 1, minWidth: "180px", textAlign: "left" }}>
-              <p style={{ fontWeight: 800, color: result.color, fontSize: "18px" }}>
-                진단: {result.label}
-              </p>
-              <div style={{ marginTop: "12px" }}>
-                <NextTierProgress score={latestScore} />
-              </div>
-            </div>
-          </div>
-
-          <p style={{ fontWeight: 800, fontSize: "15px", marginTop: "20px" }}>
-            이번주 실천 미션 ({doneCount}/{result.tips.length})
-          </p>
-          <ul style={{ marginTop: "10px", paddingLeft: "0", listStyle: "none" }}>
-            {result.tips.map((tip, i) => (
-              <li
-                key={i}
-                onClick={() => setChecked((c) => ({ ...c, [i]: !c[i] }))}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 10px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  background: checked[i] ? "#f0fdf4" : "transparent",
-                  textDecoration: checked[i] ? "line-through" : "none",
-                  color: checked[i] ? "#16a34a" : "#1f2937",
-                  marginBottom: "4px",
-                }}
-              >
-                <span
-                  style={{
-                    width: "18px",
-                    height: "18px",
-                    borderRadius: "5px",
-                    border: `2px solid ${checked[i] ? "#16a34a" : "#d1d5db"}`,
-                    background: checked[i] ? "#16a34a" : "transparent",
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    fontSize: "12px",
-                  }}
-                >
-                  {checked[i] ? "✓" : ""}
-                </span>
-                {tip}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {latestScore !== undefined && (
-        <div
-          style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
-            padding: "20px 28px",
-            width: "100%",
-            textAlign: "left",
-          }}
-        >
-          <p style={{ fontWeight: 800, fontSize: "16px" }}>또래 비교</p>
-          <p style={{ fontSize: "14px", color: "#6b7280", marginTop: "4px" }}>
-            같은 나이대 평균 신용점수: {PEER_AVERAGE}점
-          </p>
-          <div style={{ background: "#f3f4f6", borderRadius: "999px", height: "10px", marginTop: "10px", position: "relative" }}>
-            <div
-              style={{
-                position: "absolute",
-                left: `${Math.min(100, (PEER_AVERAGE / 1000) * 100)}%`,
-                top: "-4px",
-                width: "2px",
-                height: "18px",
-                background: "#9ca3af",
-              }}
-            />
-            <div
-              style={{
-                width: `${Math.min(100, (latestScore / 1000) * 100)}%`,
-                height: "100%",
-                borderRadius: "999px",
-                background: latestScore >= PEER_AVERAGE ? "#16a34a" : "#dc2626",
-                transition: "width 0.5s ease",
-              }}
-            />
-          </div>
-          <p style={{ fontSize: "14px", marginTop: "10px" }}>
-            내 점수는 평균보다{" "}
-            <strong style={{ color: latestScore >= PEER_AVERAGE ? "#16a34a" : "#dc2626" }}>
-              {Math.abs(latestScore - PEER_AVERAGE)}점{" "}
-              {latestScore >= PEER_AVERAGE ? "높아요" : "낮아요"}
-            </strong>
-          </p>
-        </div>
-      )}
-
-      {history.length > 0 && (
-        <div
-          style={{
-            background: "#ffffff",
-            border: "2px solid #e5e7eb",
-            borderRadius: "12px",
-            padding: "20px 28px",
-            width: "100%",
-            textAlign: "left",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>성장 기록</p>
-            <span style={{ fontSize: "13px", color: "#6b7280" }}>총 {history.length}회 기록</span>
-          </div>
-          {(() => {
-            const width = 440;
-            const height = 140;
-            const padX = 24;
-            const padTop = 20;
-            const padBottom = 24;
-            const maxScore = Math.max(...history);
-            const points = history.map((score, i) => {
-              const x =
-                history.length === 1
-                  ? width / 2
-                  : padX + (i * (width - padX * 2)) / (history.length - 1);
-              const y = padTop + (height - padTop - padBottom) * (1 - score / maxForChart);
-              return { x, y, score };
-            });
-            const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-            const maxY = padTop + (height - padTop - padBottom) * (1 - maxScore / maxForChart);
-
-            return (
-              <svg width="100%" viewBox={`0 0 ${width} ${height}`}>
-                <line x1={padX} y1={maxY} x2={width - padX} y2={maxY} stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={1} />
-                <text x={padX} y={maxY - 6} textAnchor="start" fontSize={11} fill="#6b7280">
-                  최고점 {maxScore}
-                </text>
-                <path d={linePath} fill="none" stroke="#f97316" strokeWidth={2} />
-                {points.map((p, i) => (
-                  <g key={i}>
-                    <circle cx={p.x} cy={p.y} r={4} fill="#f97316" />
-                    <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize={12} fontWeight={700} fill="#1f2937">
-                      {p.score}
-                    </text>
-                    {i > 0 && (
-                      <text
-                        x={(p.x + points[i - 1].x) / 2}
-                        y={(p.y + points[i - 1].y) / 2 - 8}
-                        textAnchor="middle"
-                        fontSize={11}
-                        fontWeight={700}
-                        fill={p.score - points[i - 1].score >= 0 ? "#16a34a" : "#dc2626"}
-                      >
-                        {p.score - points[i - 1].score >= 0 ? "+" : ""}
-                        {p.score - points[i - 1].score}
-                      </text>
-                    )}
-                    <text x={p.x} y={height - 4} textAnchor="middle" fontSize={11} fill="#9ca3af">
-                      #{i + 1}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            );
-          })()}
-        </div>
-      )}
-    </div>
-  );
-}
 
 type QuizQuestion = { q: string; a: boolean; explain: string };
 
@@ -1024,7 +1248,7 @@ function QuizPage() {
       <div
         style={{
           background: "#ffffff",
-          border: "2px solid #e5e7eb",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
           borderRadius: "12px",
           padding: "16px 20px",
           width: "100%",
@@ -1043,7 +1267,7 @@ function QuizPage() {
         <div
           style={{
             background: "#ffffff",
-            border: "2px solid #e5e7eb",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
             borderRadius: "12px",
             padding: "24px 20px",
             width: "100%",
@@ -1126,7 +1350,7 @@ function QuizPage() {
         <div
           style={{
             background: "#ffffff",
-            border: "2px solid #e5e7eb",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
             borderRadius: "12px",
             padding: "32px 20px",
             width: "100%",
@@ -1168,6 +1392,30 @@ function QuizPage() {
 
 function formatWon(n: number) {
   return Math.round(n).toLocaleString("ko-KR") + "원";
+}
+
+const MARKET_KEYWORDS = [
+  "뉴스", "시황", "주가", "종목", "코인", "비트코인", "이더리움", "알트코인",
+  "실적", "공시", "상한가", "하한가", "급등", "급락", "상승", "하락",
+  "매수", "매도", "증시", "코스피", "코스닥", "나스닥", "다우", "환율", "금리",
+  "주식", "장마감", "거래량", "시가총액",
+];
+
+function looksLikeMarketQuestion(text: string): boolean {
+  if (MARKET_KEYWORDS.some((k) => text.includes(k))) return true;
+  return /\b[A-Z]{2,5}\b/.test(text);
+}
+
+async function fetchNewsHeadlines(query: string, label?: string): Promise<string> {
+  try {
+    const res = await fetch(`/api/news?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    const headlines: string[] = (data.items ?? []).slice(0, 10).map((n: { title: string }) => n.title);
+    if (!headlines.length) return "";
+    return `\n\n[${label ?? query} 관련 최근 뉴스 헤드라인]\n${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}`;
+  } catch {
+    return "";
+  }
 }
 
 const KOREAN_GROUP_UNITS = ["", "만", "억", "조"];
@@ -1215,6 +1463,76 @@ type CoinOption = { market: string; symbol: string; name: string };
 type StockOption = { code: string; name: string; exchange: string; nationCode: string };
 type InvestMode = "realtime" | "virtual";
 
+type TradeRecord = {
+  id: string;
+  date: string;
+  time: string;
+  symbol: string;
+  action: "매수" | "매도";
+  qty: number;
+  price: number;
+  reason: string;
+};
+
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+const TRADE_LOG_KEY = "moneyup_trade_log";
+
+function loadTradeLog(): TradeRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(TRADE_LOG_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTradeLog(log: TradeRecord[]) {
+  try {
+    window.localStorage.setItem(TRADE_LOG_KEY, JSON.stringify(log));
+  } catch {
+    // ignore
+  }
+}
+
+function deriveHoldingsFromLog(log: TradeRecord[]): Record<string, number> {
+  const qty: Record<string, number> = {};
+  for (const t of log) {
+    const delta = t.action === "매수" ? t.qty : -t.qty;
+    qty[t.symbol] = (qty[t.symbol] ?? 0) + delta;
+  }
+  return Object.fromEntries(Object.entries(qty).filter(([, q]) => q > 1e-9));
+}
+
+type MorningLetter = { date: string; content: string };
+
+const MORNING_LETTER_KEY = "moneyup_morning_letter";
+const MORNING_LETTER_SEEN_PREFIX = "moneyup_morning_letter_seen_";
+
+function loadMorningLetter(): MorningLetter | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(MORNING_LETTER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveMorningLetter(letter: MorningLetter) {
+  try {
+    window.localStorage.setItem(MORNING_LETTER_KEY, JSON.stringify(letter));
+  } catch {
+    // ignore
+  }
+}
+
 const MIN_CASH = 1_000_000;
 const MAX_CASH = 1_000_000_000;
 const MAX_PICKS = 5;
@@ -1252,11 +1570,13 @@ function AssetPicker({
   initialPicked,
   onComplete,
   onCancel,
+  onBack,
   stepLabel,
 }: {
   initialPicked: InvestAsset[];
   onComplete: (assets: InvestAsset[]) => void;
   onCancel?: () => void;
+  onBack?: () => void;
   stepLabel?: string;
 }) {
   const [assetTab, setAssetTab] = useState<InvestAssetType>("코인");
@@ -1332,6 +1652,7 @@ function AssetPicker({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
+          position: "relative",
           background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
@@ -1342,6 +1663,26 @@ function AssetPicker({
           textAlign: "left",
         }}
       >
+        {onBack && (
+          <button
+            onClick={onBack}
+            aria-label="이전 단계로"
+            style={{
+              position: "absolute",
+              top: "16px",
+              right: "16px",
+              background: "none",
+              border: "none",
+              fontSize: "20px",
+              color: "#9ca3af",
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: "4px",
+            }}
+          >
+            ←
+          </button>
+        )}
         {stepLabel && <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>{stepLabel}</p>}
         <p style={{ fontSize: "18px", fontWeight: 800, marginTop: stepLabel ? "10px" : 0 }}>관심종목을 5개 선택해주세요</p>
         <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
@@ -1375,21 +1716,32 @@ function AssetPicker({
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "2px",
+            marginTop: "16px",
+            padding: "2px",
+            background: "#e5e5ea",
+            borderRadius: "10px",
+          }}
+        >
           {(["코인", "주식"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setAssetTab(t)}
               style={{
                 flex: 1,
-                padding: "10px",
+                padding: "8px",
                 borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: 700,
-                border: assetTab === t ? "2px solid #f97316" : "2px solid #e5e7eb",
-                background: assetTab === t ? "#fff7ed" : "#fff",
-                color: assetTab === t ? "#f97316" : "#374151",
+                border: "none",
+                background: assetTab === t ? "#fff" : "transparent",
+                boxShadow: assetTab === t ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                color: assetTab === t ? "#f97316" : "#6b7280",
                 cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
               {t}
@@ -1409,7 +1761,7 @@ function AssetPicker({
             width: "100%",
             padding: "10px 12px",
             fontSize: "13px",
-            border: "2px solid #e5e7eb",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
             borderRadius: "8px",
           }}
         />
@@ -1525,8 +1877,10 @@ function AssetPicker({
 
 function InvestOnboarding({
   onComplete,
+  onGoHome,
 }: {
   onComplete: (cash: number, assets: InvestAsset[], mode: InvestMode) => void;
+  onGoHome: () => void;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [mode, setMode] = useState<InvestMode | null>(null);
@@ -1554,6 +1908,7 @@ function InvestOnboarding({
         initialPicked={[]}
         stepLabel="3/3"
         onComplete={(assets) => onComplete(Number(cashInput), assets, mode!)}
+        onBack={() => setStep(2)}
       />
     );
   }
@@ -1574,6 +1929,7 @@ function InvestOnboarding({
       >
         <div
           style={{
+            position: "relative",
             background: "#ffffff",
             borderRadius: "16px",
             padding: "24px",
@@ -1584,6 +1940,24 @@ function InvestOnboarding({
             textAlign: "left",
           }}
         >
+          <button
+            onClick={onGoHome}
+            aria-label="홈으로"
+            style={{
+              position: "absolute",
+              top: "16px",
+              right: "16px",
+              background: "none",
+              border: "none",
+              fontSize: "18px",
+              color: "#9ca3af",
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: "4px",
+            }}
+          >
+            ✕
+          </button>
           <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>1/3</p>
           <p style={{ fontSize: "18px", fontWeight: 800, marginTop: "10px" }}>투자 모드를 선택해주세요</p>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
@@ -1597,7 +1971,7 @@ function InvestOnboarding({
               width: "100%",
               textAlign: "left",
               padding: "16px",
-              border: "2px solid #e5e7eb",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
               borderRadius: "10px",
               background: "#fff",
               cursor: "pointer",
@@ -1616,7 +1990,7 @@ function InvestOnboarding({
               width: "100%",
               textAlign: "left",
               padding: "16px",
-              border: "2px solid #e5e7eb",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
               borderRadius: "10px",
               background: "#fff",
               cursor: "pointer",
@@ -1647,6 +2021,7 @@ function InvestOnboarding({
     >
       <div
         style={{
+          position: "relative",
           background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
@@ -1657,6 +2032,24 @@ function InvestOnboarding({
           textAlign: "left",
         }}
       >
+        <button
+          onClick={() => setStep(1)}
+          aria-label="이전 단계로"
+          style={{
+            position: "absolute",
+            top: "16px",
+            right: "16px",
+            background: "none",
+            border: "none",
+            fontSize: "20px",
+            color: "#9ca3af",
+            cursor: "pointer",
+            lineHeight: 1,
+            padding: "4px",
+          }}
+        >
+          ←
+        </button>
         <p style={{ fontSize: "13px", fontWeight: 800, color: "#f97316" }}>2/3</p>
         <p style={{ fontSize: "18px", fontWeight: 800, marginTop: "10px" }}>모의투자 시작할 금액을 알려주세요</p>
         <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "6px" }}>
@@ -1708,21 +2101,476 @@ const VIRTUAL_TICK_VOLATILITY = 0.03;
 const VIRTUAL_TICK_DRIFT = 0.0015;
 const VIRTUAL_TICK_REVERSION = 0.2;
 
+function TradeReasonModal({
+  action,
+  symbol,
+  qty,
+  price,
+  onCancel,
+  onConfirm,
+}: {
+  action: "매수" | "매도";
+  symbol: string;
+  qty: number;
+  price: number;
+  onCancel: () => void;
+  onConfirm: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [step, setStep] = useState<"input" | "confirm">("input");
+  const [summary, setSummary] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submitReason = async () => {
+    const text = reason.trim();
+    if (!text) return;
+    setLoading(true);
+    let result = "";
+    try {
+      const res = await fetch("/api/coach-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: `사용자가 ${symbol}을(를) ${qty}개 ${action}하려는 이유로 이렇게 입력했어: "${text}". 이 내용을 자연스러운 한 문장으로 정리해서 "~이렇게 저장할까요?" 형태의 질문 한 문장만 출력해줘. 다른 말은 절대 덧붙이지 마.`,
+            },
+          ],
+        }),
+      });
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          result += decoder.decode(value, { stream: true });
+        }
+      }
+    } catch {
+      // fall back below
+    }
+    setSummary(result.trim() || `"${text}"라고 저장할까요?`);
+    setLoading(false);
+    setStep("confirm");
+  };
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 55,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
+      >
+        {step === "input" ? (
+          <>
+            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "6px" }}>
+              {symbol} {qty}개 {action} 이유를 알려주세요
+            </p>
+            <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>
+              간단하게라도 이유를 남기면 나중에 투자 습관을 돌아볼 수 있어요
+            </p>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="예: 실적 발표 기대감에 매수"
+              autoFocus
+              style={{
+                width: "100%",
+                minHeight: "80px",
+                padding: "12px",
+                fontSize: "14px",
+                borderRadius: "10px",
+                border: "1px solid #e5e5ea",
+                resize: "none",
+                fontFamily: "inherit",
+              }}
+            />
+            <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+              <button
+                onClick={onCancel}
+                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+              >
+                취소
+              </button>
+              <button
+                onClick={submitReason}
+                disabled={!reason.trim() || loading}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: !reason.trim() || loading ? "#fdba74" : "#f97316",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  cursor: !reason.trim() || loading ? "default" : "pointer",
+                }}
+              >
+                {loading ? "확인 중..." : "다음"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "14px", lineHeight: 1.5 }}>{summary}</p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => setStep("input")}
+                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+              >
+                아니오
+              </button>
+              <button
+                onClick={() => onConfirm(reason.trim())}
+                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+              >
+                네
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; onClose: () => void }) {
+  const today = new Date();
+  const todayStr = localDateStr(today);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const tradesByDate = tradeLog.reduce<Record<string, TradeRecord[]>>((acc, t) => {
+    (acc[t.date] ??= []).push(t);
+    return acc;
+  }, {});
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+
+  const cells: { day: number; dateStr: string; inMonth: boolean }[] = [];
+  for (let i = 0; i < totalCells; i++) {
+    const dayOffset = i - startWeekday + 1;
+    const d = new Date(viewYear, viewMonth, dayOffset);
+    cells.push({ day: d.getDate(), dateStr: localDateStr(d), inMonth: d.getMonth() === viewMonth });
+  }
+
+  const goPrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
+  };
+  const goNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
+  };
+
+  const selectedTrades = (tradesByDate[selectedDate] ?? []).slice().sort((a, b) => a.time.localeCompare(b.time));
+
+  const [advicePanel, setAdvicePanel] = useState<"day" | "month" | null>(null);
+  const [adviceText, setAdviceText] = useState("");
+  const [adviceLoading, setAdviceLoading] = useState(false);
+
+  const askAdvice = async (prompt: string) => {
+    setAdviceLoading(true);
+    setAdviceText("");
+    let text = "";
+    try {
+      const res = await fetch("/api/coach-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+      });
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          text += decoder.decode(value, { stream: true });
+          setAdviceText(text);
+        }
+      }
+    } catch {
+      // fall back below
+    }
+    if (!text.trim()) setAdviceText("지금은 분석을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+    setAdviceLoading(false);
+  };
+
+  const triggerDayAdvice = () => {
+    setAdvicePanel("day");
+    if (selectedTrades.length === 0) {
+      setAdviceText("이 날짜엔 거래 내역이 없어서 분석할 게 없어요.");
+      return;
+    }
+    const list = selectedTrades
+      .map((t) => `- ${t.time} ${t.action} ${t.symbol} ${t.qty}개 @ ${formatWon(t.price)} (이유: ${t.reason})`)
+      .join("\n");
+    askAdvice(
+      `사용자의 ${selectedDate} 하루 매매 기록이야:\n${list}\n\n이 기록과 각 거래 이유를 보고, 오늘 하루의 매매 패턴에서 눈에 띄는 점(충동매매, 근거 있는 판단, 리스크 관리 등)을 짚어주고 개선하면 좋을 점을 3~4문장으로 조언해줘.`
+    );
+  };
+
+  const triggerMonthAdvice = () => {
+    setAdvicePanel("month");
+    const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+    const monthTrades = tradeLog
+      .filter((t) => t.date.startsWith(monthPrefix))
+      .slice()
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    if (monthTrades.length === 0) {
+      setAdviceText(`${viewYear}년 ${viewMonth + 1}월엔 거래 내역이 없어서 분석할 게 없어요.`);
+      return;
+    }
+    const list = monthTrades
+      .map((t) => `- ${t.date} ${t.time} ${t.action} ${t.symbol} ${t.qty}개 @ ${formatWon(t.price)} (이유: ${t.reason})`)
+      .join("\n");
+    askAdvice(
+      `사용자의 ${viewYear}년 ${viewMonth + 1}월 한 달 매매 기록이야:\n${list}\n\n이 한 달 동안의 매매 패턴과 각 거래 이유를 분석해서, 반복되는 습관(예: 특정 이유로 자주 매매, 손절·익절 타이밍, 특정 종목 쏠림 등)과 개선점을 4~6문장으로 조언해줘.`
+    );
+  };
+
+  const adviceIconStyle: CSSProperties = {
+    width: "22px",
+    height: "22px",
+    borderRadius: "50%",
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    color: "#f97316",
+    fontSize: "12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    padding: 0,
+    flexShrink: 0,
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ display: "flex", alignItems: "stretch", maxWidth: "calc(100vw - 40px)", overflowX: "auto" }}
+      >
+      <div
+        style={{
+          position: "relative",
+          background: "#fff",
+          borderRadius: advicePanel ? "20px 0 0 20px" : "20px",
+          padding: "20px",
+          width: "340px",
+          flexShrink: 0,
+          maxHeight: "85vh",
+          overflowY: "auto",
+          textAlign: "left",
+        }}
+      >
+        <button
+          onClick={onClose}
+          aria-label="캘린더 닫기"
+          style={{
+            position: "absolute",
+            top: "14px",
+            right: "14px",
+            background: "none",
+            border: "none",
+            fontSize: "18px",
+            color: "#9ca3af",
+            cursor: "pointer",
+            lineHeight: 1,
+            padding: "4px",
+          }}
+        >
+          ✕
+        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", marginBottom: "16px" }}>
+          <button onClick={goPrevMonth} style={{ background: "none", border: "none", fontSize: "18px", color: "#f97316", cursor: "pointer", padding: "4px 10px" }}>
+            ‹
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <p style={{ fontWeight: 800, fontSize: "17px" }}>
+              {viewYear}년 {viewMonth + 1}월
+            </p>
+            <button onClick={triggerMonthAdvice} aria-label="이번 달 거래 분석" style={adviceIconStyle}>
+              ✨
+            </button>
+          </div>
+          <button onClick={goNextMonth} style={{ background: "none", border: "none", fontSize: "18px", color: "#f97316", cursor: "pointer", padding: "4px 10px" }}>
+            ›
+          </button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontSize: "12px", color: "#9ca3af", marginBottom: "6px" }}>
+          {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
+            <span key={w}>{w}</span>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: "4px" }}>
+          {cells.map((c, i) => {
+            const hasTrade = !!tradesByDate[c.dateStr]?.length;
+            const isSelected = c.dateStr === selectedDate;
+            const isToday = c.dateStr === todayStr;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDate(c.dateStr)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "2px",
+                  padding: "6px 0",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  opacity: c.inMonth ? 1 : 0.3,
+                }}
+              >
+                <span
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "13px",
+                    fontWeight: isToday ? 800 : 500,
+                    background: isSelected ? "#f97316" : "transparent",
+                    color: isSelected ? "#fff" : isToday ? "#f97316" : "#1c1c1e",
+                  }}
+                >
+                  {c.day}
+                </span>
+                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: hasTrade ? "#f97316" : "transparent" }} />
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: "18px", borderTop: "1px solid #e5e5ea", paddingTop: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+            <p style={{ fontWeight: 700, fontSize: "14px" }}>{selectedDate} 거래 내역</p>
+            <button onClick={triggerDayAdvice} aria-label="이 날 거래 분석" style={adviceIconStyle}>
+              ✨
+            </button>
+          </div>
+          {selectedTrades.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "#9ca3af" }}>이 날짜엔 거래 내역이 없어요</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {selectedTrades.map((t) => (
+                <div key={t.id} style={{ background: "#f2f2f7", borderRadius: "12px", padding: "10px 12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: 700 }}>
+                    <span style={{ color: t.action === "매수" ? "#dc2626" : "#2563eb" }}>
+                      {t.action} · {t.symbol}
+                    </span>
+                    <span style={{ color: "#6b7280" }}>{t.time}</span>
+                  </div>
+                  <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
+                    {t.qty}개 · {formatWon(t.price)}
+                  </p>
+                  <p style={{ fontSize: "13px", color: "#374151", marginTop: "6px" }}>“{t.reason}”</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {advicePanel && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: "#fff",
+            borderLeft: "1px solid #f0f0f0",
+            borderRadius: "0 20px 20px 0",
+            padding: "18px",
+            width: "240px",
+            flexShrink: 0,
+            maxHeight: "85vh",
+            overflowY: "auto",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <p style={{ fontWeight: 800, fontSize: "15px" }}>
+              ✨ {advicePanel === "day" ? `${selectedDate} 하루 조언` : `${viewYear}년 ${viewMonth + 1}월 조언`}
+            </p>
+            <button
+              onClick={() => setAdvicePanel(null)}
+              aria-label="조언 패널 닫기"
+              style={{ background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#9ca3af" }}
+            >
+              ✕
+            </button>
+          </div>
+          {adviceLoading && !adviceText ? (
+            <p style={{ fontSize: "13px", color: "#9ca3af" }}>분석 중이에요...</p>
+          ) : (
+            <p style={{ fontSize: "13px", lineHeight: 1.6, whiteSpace: "pre-wrap", color: "#374151" }}>{adviceText}</p>
+          )}
+        </div>
+      )}
+      </div>
+    </div>
+  );
+}
+
 function InvestSession({
   initialCash,
   initialAssets,
+  initialHoldings,
   mode,
+  userId,
+  onReset,
 }: {
   initialCash: number;
   initialAssets: InvestAsset[];
+  initialHoldings?: Record<string, { qty: number; avgPrice: number }>;
   mode: InvestMode;
+  userId: string | null;
+  onReset: () => void;
 }) {
   const [assets, setAssets] = useState(initialAssets);
   const [prices, setPrices] = useState<Record<string, number>>(
     Object.fromEntries(initialAssets.map((a) => [a.symbol, 0]))
   );
   const [cash, setCash] = useState(initialCash);
-  const [holdings, setHoldings] = useState<Record<string, { qty: number; avgPrice: number }>>({});
+  const [holdings, setHoldings] = useState<Record<string, { qty: number; avgPrice: number }>>(initialHoldings ?? {});
   const [selected, setSelected] = useState(initialAssets[0].symbol);
   const [qtyInput, setQtyInput] = useState("1");
   const [message, setMessage] = useState("");
@@ -1739,6 +2587,25 @@ function InvestSession({
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([]);
   const [aiInput, setAiInput] = useState("");
   const aiScrollRef = useRef<HTMLDivElement>(null);
+  const [pendingTrade, setPendingTrade] = useState<{ action: "매수" | "매도"; qty: number; price: number } | null>(null);
+  const [tradeLog, setTradeLog] = useState<TradeRecord[]>([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (userId) {
+      fetchTrades(userId).then((rows) => setTradeLog(rows.map((t, i) => ({ id: `${i}`, ...t }))));
+    } else {
+      setTradeLog(loadTradeLog());
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchAiMessages(userId, "invest").then((rows) => {
+      if (rows.length > 0) setAiMessages(rows);
+    });
+  }, [userId]);
 
   useEffect(() => {
     for (const [symbol, h] of Object.entries(holdings)) {
@@ -1780,21 +2647,10 @@ function InvestSession({
   const profit = totalAssets - initialCash;
   const profitPct = (profit / initialCash) * 100;
 
-  const fetchNewsHeadlines = async (symbol: string): Promise<string> => {
-    try {
-      const res = await fetch(`/api/news?q=${encodeURIComponent(symbol)}`);
-      const data = await res.json();
-      const headlines: string[] = (data.items ?? []).slice(0, 10).map((n: { title: string }) => n.title);
-      if (!headlines.length) return "";
-      return `\n\n[${symbol} 관련 최근 뉴스 헤드라인]\n${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}`;
-    } catch {
-      return "";
-    }
-  };
-
   const requestAiAdvice = async (context: string, hidden = false) => {
     const nextMessages: ChatMessage[] = [...aiMessages, { role: "user", content: context, hidden }];
     setAiMessages(nextMessages);
+    if (userId) void insertAiMessage(userId, "invest", { role: "user", content: context, hidden });
     setAiLoading(true);
     setAiAdvice("");
     const controller = new AbortController();
@@ -1818,6 +2674,7 @@ function InvestSession({
         setAiAdvice(text);
       }
       setAiMessages((prev) => [...prev, { role: "assistant", content: text }]);
+      if (userId) void insertAiMessage(userId, "invest", { role: "assistant", content: text });
     } catch {
       setAiAdvice("지금은 코치 의견을 불러오지 못했어요 (응답 지연 또는 오류)");
     } finally {
@@ -1979,6 +2836,7 @@ function InvestSession({
     setAssets(newAssets);
     setSelected((prev) => (newAssets.some((a) => a.symbol === prev) ? prev : newAssets[0].symbol));
     setEditingAssets(false);
+    if (userId) void savePortfolio(userId, { cash, mode, assets: newAssets, holdings });
   };
 
   const buy = () => {
@@ -1989,23 +2847,11 @@ function InvestSession({
       setMessage("시세를 불러오는 중이에요. 잠시 후 다시 시도해주세요");
       return;
     }
-    const cost = price * qty;
-    if (cost > cash) {
+    if (price * qty > cash) {
       setMessage("잔고가 부족해요");
       return;
     }
-    setCash((c) => c - cost);
-    setHoldings((prev) => {
-      const existing = prev[selected];
-      const newQty = (existing?.qty ?? 0) + qty;
-      const newAvg = existing
-        ? (existing.avgPrice * existing.qty + cost) / newQty
-        : price;
-      return { ...prev, [selected]: { qty: newQty, avgPrice: newAvg } };
-    });
-    setMessage(`${selected} ${qty}개 매수 완료`);
-    manualRefresh();
-    if (aiOpen) loadTradeAdvice("매수", qty, price);
+    setPendingTrade({ action: "매수", qty, price });
   };
 
   const sell = () => {
@@ -2021,17 +2867,58 @@ function InvestSession({
       setMessage("시세를 불러오는 중이에요. 잠시 후 다시 시도해주세요");
       return;
     }
-    setCash((c) => c + price * qty);
-    setHoldings((prev) => {
-      const remaining = existing.qty - qty;
-      const next = { ...prev };
-      if (remaining <= 0) delete next[selected];
-      else next[selected] = { qty: remaining, avgPrice: existing.avgPrice };
-      return next;
-    });
-    setMessage(`${selected} ${qty}개 매도 완료`);
+    setPendingTrade({ action: "매도", qty, price });
+  };
+
+  const executeTrade = (reason: string) => {
+    if (!pendingTrade) return;
+    const { action, qty, price } = pendingTrade;
+    let nextCash: number;
+    let nextHoldings: Record<string, { qty: number; avgPrice: number }>;
+    if (action === "매수") {
+      const cost = price * qty;
+      nextCash = cash - cost;
+      const existing = holdings[selected];
+      const newQty = (existing?.qty ?? 0) + qty;
+      const newAvg = existing ? (existing.avgPrice * existing.qty + cost) / newQty : price;
+      nextHoldings = { ...holdings, [selected]: { qty: newQty, avgPrice: newAvg } };
+      setMessage(`${selected} ${qty}개 매수 완료`);
+    } else {
+      nextCash = cash + price * qty;
+      const existing = holdings[selected];
+      nextHoldings = holdings;
+      if (existing) {
+        const remaining = existing.qty - qty;
+        nextHoldings = { ...holdings };
+        if (remaining <= 0) delete nextHoldings[selected];
+        else nextHoldings[selected] = { qty: remaining, avgPrice: existing.avgPrice };
+      }
+      setMessage(`${selected} ${qty}개 매도 완료`);
+    }
+    setCash(nextCash);
+    setHoldings(nextHoldings);
+    if (userId) void savePortfolio(userId, { cash: nextCash, mode, assets, holdings: nextHoldings });
+    const now = new Date();
+    const record: TradeRecord = {
+      id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      date: localDateStr(now),
+      time: now.toTimeString().slice(0, 5),
+      symbol: selected,
+      action,
+      qty,
+      price,
+      reason,
+    };
+    const nextLog = [...tradeLog, record];
+    setTradeLog(nextLog);
+    if (userId) {
+      void insertTrade(userId, { date: record.date, time: record.time, symbol: record.symbol, action: record.action, qty: record.qty, price: record.price, reason: record.reason });
+    } else {
+      saveTradeLog(nextLog);
+    }
+    setPendingTrade(null);
     manualRefresh();
-    if (aiOpen) loadTradeAdvice("매도", qty, price);
+    if (aiOpen) loadTradeAdvice(action, qty, price);
   };
 
   const selectedPrice = prices[selected] ?? 0;
@@ -2039,8 +2926,25 @@ function InvestSession({
 
   return (
     <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
-        <p style={{ fontSize: "13px", color: "#6b7280" }}>내 총자산</p>
+      <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)", padding: "20px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: "13px", color: "#6b7280" }}>내 총자산</p>
+          <button
+            onClick={() => setResetConfirmOpen(true)}
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#6b7280",
+              background: "#f2f2f7",
+              border: "none",
+              borderRadius: "8px",
+              padding: "5px 10px",
+              cursor: "pointer",
+            }}
+          >
+            🔄 처음부터 다시
+          </button>
+        </div>
         <p style={{ fontSize: "26px", fontWeight: 800, marginTop: "4px" }}>{formatWon(totalAssets)}</p>
         <p style={{ fontSize: "14px", marginTop: "6px", color: profit >= 0 ? "#16a34a" : "#dc2626", fontWeight: 700 }}>
           {profit >= 0 ? "+" : ""}
@@ -2057,7 +2961,7 @@ function InvestSession({
         </div>
       </div>
 
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+      <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)", padding: "20px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <p style={{ fontWeight: 800, fontSize: "16px" }}>시세</p>
           <div style={{ display: "flex", gap: "8px" }}>
@@ -2134,7 +3038,7 @@ function InvestSession({
         </div>
       </div>
 
-      <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+      <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)", padding: "20px 24px" }}>
         <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>{selected} 매수/매도</p>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
@@ -2146,7 +3050,7 @@ function InvestSession({
               style={{
                 padding: "16px 68px 16px 18px",
                 fontSize: "20px",
-                border: "2px solid #e5e7eb",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
                 borderRadius: "10px",
                 width: "180px",
               }}
@@ -2209,7 +3113,7 @@ function InvestSession({
       </div>
 
       {Object.keys(holdings).length > 0 && (
-        <div style={{ background: "#ffffff", border: "2px solid #e5e7eb", borderRadius: "12px", padding: "20px 24px" }}>
+        <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)", padding: "20px 24px" }}>
           <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>보유 종목</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {Object.entries(holdings).map(([symbol, h]) => {
@@ -2235,6 +3139,59 @@ function InvestSession({
 
       {editingAssets && (
         <AssetPicker initialPicked={assets} onCancel={() => setEditingAssets(false)} onComplete={finishEditingAssets} />
+      )}
+
+      {pendingTrade && (
+        <TradeReasonModal
+          action={pendingTrade.action}
+          symbol={selected}
+          qty={pendingTrade.qty}
+          price={pendingTrade.price}
+          onCancel={() => setPendingTrade(null)}
+          onConfirm={executeTrade}
+        />
+      )}
+
+      {calendarOpen && <TradeCalendarModal tradeLog={tradeLog} onClose={() => setCalendarOpen(false)} />}
+
+      {resetConfirmOpen && (
+        <div
+          onClick={() => setResetConfirmOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 75,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
+          >
+            <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "8px" }}>처음부터 다시 시작할까요?</p>
+            <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6 }}>
+              현재 현금·보유 종목·관심종목 설정이 초기화되고 실시간모드/가상모드 선택부터 다시 시작해요. 지금까지의 거래 기록과 캘린더는 그대로 유지됩니다.
+            </p>
+            <div style={{ display: "flex", gap: "8px", marginTop: "18px" }}>
+              <button
+                onClick={() => setResetConfirmOpen(false)}
+                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+              >
+                취소
+              </button>
+              <button
+                onClick={onReset}
+                style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#dc2626", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+              >
+                처음부터 다시
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {priceEvent && (
@@ -2388,7 +3345,7 @@ function InvestSession({
                   flex: 1,
                   padding: "8px 10px",
                   fontSize: "13px",
-                  border: "2px solid #e5e7eb",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
                   borderRadius: "8px",
                 }}
               />
@@ -2412,6 +3369,23 @@ function InvestSession({
           </div>
         )}
         <button
+          onClick={() => setCalendarOpen(true)}
+          aria-label="거래 캘린더"
+          style={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: "#ffffff",
+            color: "#f97316",
+            border: "1px solid #fed7aa",
+            fontSize: "20px",
+            cursor: "pointer",
+            boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+          }}
+        >
+          📅
+        </button>
+        <button
           onClick={openAiAdvisor}
           style={{
             width: "56px",
@@ -2432,19 +3406,101 @@ function InvestSession({
   );
 }
 
-function InvestPage() {
-  const [setup, setSetup] = useState<{ cash: number; assets: InvestAsset[]; mode: InvestMode } | null>(null);
+function InvestPage({ userId, onGoHome }: { userId: string | null; onGoHome: () => void }) {
+  const [setup, setSetup] = useState<{
+    cash: number;
+    assets: InvestAsset[];
+    mode: InvestMode;
+    holdings: Record<string, { qty: number; avgPrice: number }>;
+  } | null>(null);
+  const [checking, setChecking] = useState(!!userId);
+  const [guestWarningOpen, setGuestWarningOpen] = useState(!userId);
+
+  useEffect(() => {
+    if (!userId) {
+      setChecking(false);
+      return;
+    }
+    setChecking(true);
+    fetchPortfolio(userId).then((p) => {
+      if (p) {
+        setSetup({ cash: p.cash, assets: p.assets as InvestAsset[], mode: p.mode as InvestMode, holdings: p.holdings });
+      }
+      setChecking(false);
+    });
+  }, [userId]);
+
+  if (checking) return null;
+
+  const guestWarning = guestWarningOpen && (
+    <div
+      onClick={() => setGuestWarningOpen(false)}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 90,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
+      >
+        <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "8px" }}>⚠️ 로그인하지 않은 상태예요</p>
+        <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6 }}>
+          비로그인 상태에서 모의투자를 진행하면 거래 기록과 투자 내역이 저장되지 않아요.
+        </p>
+        <button
+          onClick={() => setGuestWarningOpen(false)}
+          style={{ marginTop: "16px", width: "100%", padding: "12px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
 
   if (!setup) {
-    return <InvestOnboarding onComplete={(cash, assets, mode) => setSetup({ cash, assets, mode })} />;
+    return (
+      <>
+        {guestWarning}
+        <InvestOnboarding
+          onComplete={(cash, assets, mode) => {
+            const holdings = {};
+            setSetup({ cash, assets, mode, holdings });
+            if (userId) void savePortfolio(userId, { cash, mode, assets, holdings });
+          }}
+          onGoHome={onGoHome}
+        />
+      </>
+    );
   }
 
-  return <InvestSession initialCash={setup.cash} initialAssets={setup.assets} mode={setup.mode} />;
+  return (
+    <>
+      {guestWarning}
+      <InvestSession
+        initialCash={setup.cash}
+        initialAssets={setup.assets}
+        initialHoldings={setup.holdings}
+        mode={setup.mode}
+        userId={userId}
+        onReset={() => {
+          if (userId) void deletePortfolio(userId);
+          setSetup(null);
+        }}
+      />
+    </>
+  );
 }
 
 type ChatMessage = { role: "user" | "assistant"; content: string; hidden?: boolean };
 
-function AiCoachPage() {
+function AiCoachPage({ userId }: { userId: string | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -2455,14 +3511,28 @@ function AiCoachPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!userId) return;
+    fetchAiMessages(userId, "coach").then((rows) => {
+      if (rows.length > 0) setMessages(rows);
+    });
+  }, [userId]);
+
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages([...nextMessages, { role: "assistant", content: "" }]);
+    if (userId) void insertAiMessage(userId, "coach", { role: "user", content: text });
     setInput("");
     setSending(true);
     setError("");
+
+    const newsContext = looksLikeMarketQuestion(text) ? await fetchNewsHeadlines(text) : "";
+    const apiMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: newsContext ? `${text}${newsContext}` : text },
+    ];
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -2470,7 +3540,7 @@ function AiCoachPage() {
       const res = await fetch("/api/coach-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: apiMessages }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -2492,6 +3562,7 @@ function AiCoachPage() {
           return next;
         });
       }
+      if (userId && assistantText) void insertAiMessage(userId, "coach", { role: "assistant", content: assistantText });
     } catch (e) {
       setError(e instanceof Error && e.name === "AbortError" ? "응답이 너무 오래 걸려요. 잠시 후 다시 시도해주세요" : e instanceof Error ? e.message : "오류가 발생했어요");
       setMessages((prev) => prev.slice(0, -1));
@@ -2522,7 +3593,7 @@ function AiCoachPage() {
       <div
         style={{
           background: "#ffffff",
-          border: "2px solid #e5e7eb",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
           borderRadius: "12px",
           padding: "16px",
           display: "flex",
@@ -2566,7 +3637,7 @@ function AiCoachPage() {
             flex: 1,
             padding: "12px 14px",
             fontSize: "14px",
-            border: "2px solid #e5e7eb",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
             borderRadius: "8px",
           }}
         />
@@ -2591,11 +3662,87 @@ function AiCoachPage() {
   );
 }
 
-export default function Home() {
-  const [page, setPage] = useState<"home" | "credit" | "quiz" | "invest" | "ai">("home");
-  const [menuOpen, setMenuOpen] = useState(false);
+async function migrateLocalDataToAccount(userId: string) {
+  const migratedKey = `moneyup_migrated_${userId}`;
+  if (window.localStorage.getItem(migratedKey)) return;
 
-  const titles = { home: "머니업", credit: "신용점수 분석", quiz: "퀴즈", invest: "모의투자", ai: "AI 투자 조언" };
+  try {
+    const alreadyHasRemoteTrades = await hasAnyTrades(userId);
+    if (!alreadyHasRemoteTrades) {
+      const localTrades = loadTradeLog();
+      if (localTrades.length > 0) {
+        await insertTrades(
+          userId,
+          localTrades.map(({ date, time, symbol, action, qty, price, reason }) => ({
+            date,
+            time,
+            symbol,
+            action,
+            qty,
+            price,
+            reason,
+          }))
+        );
+      }
+    }
+
+    const localLetter = loadMorningLetter();
+    if (localLetter) {
+      const remoteLetter = await fetchMorningLetter(userId, localLetter.date);
+      if (!remoteLetter) {
+        await saveMorningLetterDb(userId, localLetter.date, localLetter.content);
+      }
+    }
+    // 이제 계정(클라우드)에 안전하게 옮겨졌으니, 로그아웃 후 게스트 화면에
+    // 이전 계정의 개인 데이터가 그대로 보이는 걸 막기 위해 로컬 캐시를 지운다.
+    window.localStorage.removeItem(TRADE_LOG_KEY);
+    window.localStorage.removeItem(MORNING_LETTER_KEY);
+    window.localStorage.setItem(migratedKey, "1");
+  } catch {
+    // leave migratedKey unset so it retries on next login
+  }
+}
+
+export default function Home() {
+  const [page, setPage] = useState<"home" | "quiz" | "invest" | "ai">("home");
+  const [user, setUser] = useState<User | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const migratingRef = useRef<Set<string>>(new Set());
+
+  const triggerMigration = (uid: string) => {
+    if (migratingRef.current.has(uid)) return;
+    migratingRef.current.add(uid);
+    void migrateLocalDataToAccount(uid);
+  };
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      const sessionUser = data.session?.user ?? null;
+      setUser(sessionUser);
+      if (sessionUser) triggerMigration(sessionUser.id);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      if (nextUser) triggerMigration(nextUser.id);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const titles = { home: "머니업", quiz: "퀴즈", invest: "모의투자", ai: "AI 투자 조언" };
+
+  const handleAccountClick = () => {
+    if (user) {
+      setAccountOpen(true);
+    } else {
+      setAuthOpen(true);
+    }
+  };
+
+  const userId = user?.id ?? null;
+  const userLabel = (user?.user_metadata?.nickname as string) || user?.email;
 
   return (
     <main
@@ -2605,28 +3752,29 @@ export default function Home() {
         flexDirection: "column",
         alignItems: "center",
         gap: "16px",
-        padding: "24px 20px 60px",
+        padding: "0 20px 100px",
         textAlign: "center",
       }}
     >
       <div style={{ width: "100%", maxWidth: "640px", display: "flex", justifyContent: "flex-start" }}>
-        <Header onMenuClick={() => setMenuOpen(true)} title={titles[page]} />
+        <Header title={titles[page]} userEmail={userLabel} onAccountClick={handleAccountClick} />
       </div>
 
-      {page === "home" && <HomePage />}
-      {page === "credit" && <CreditScorePage />}
+      {page === "home" && <HomePage userId={userId} />}
       {page === "quiz" && <QuizPage />}
-      {page === "invest" && <InvestPage />}
-      {page === "ai" && <AiCoachPage />}
+      {page === "invest" && <InvestPage userId={userId} onGoHome={() => setPage("home")} />}
+      {page === "ai" && <AiCoachPage userId={userId} />}
 
-      <MenuDrawer
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onNavigate={(p) => {
-          setPage(p);
-          setMenuOpen(false);
-        }}
-      />
+      <TabBar active={page} onNavigate={setPage} />
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+      {accountOpen && user && (
+        <AccountModal
+          user={user}
+          onClose={() => setAccountOpen(false)}
+          onSignOut={() => supabase?.auth.signOut()}
+        />
+      )}
     </main>
   );
 }

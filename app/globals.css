@@ -5,10 +5,25 @@
 }
 
 body {
-  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  background: #fff7ed;
-  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Pretendard",
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  background: #f2f2f7;
+  color: #1c1c1e;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
 }
 
 @keyframes shake {
