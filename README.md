@@ -51,11 +51,7 @@
 
 ## 시작하기
 
-
 브라우저에서 **https://moneyupup.vercel.app** 접속.
-
-
-
 
 ## 폴더 구성
 
