@@ -52,7 +52,7 @@
 ## 시작하기
 
 
-브라우저에서 **https://moneyup-2c5weidg6-yn-b2.vercel.app/** 접속.
+브라우저에서 **https://moneyupup.vercel.app** 접속.
 
 
 
