@@ -3186,12 +3186,13 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
             className="trade-calendar-advice"
             style={{
               position: "absolute",
-              inset: 0,
+              inset: "16px",
               background: "#fff",
-              borderRadius: "20px",
+              borderRadius: "16px",
               padding: "20px",
               overflowY: "auto",
               textAlign: "left",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
