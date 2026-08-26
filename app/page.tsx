@@ -3043,6 +3043,7 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
       <div
         className="trade-calendar-card"
         style={{
+          position: "relative",
           background: "#fff",
           borderRadius: "20px",
           padding: "20px",
