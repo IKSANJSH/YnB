@@ -785,12 +785,12 @@ const FINANCE_TIP_TOPICS = [
 function DailyFinanceTipCard() {
   const [tip, setTip] = useState<{ title: string; desc: string } | null>(null);
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
   const didInit = useRef(false);
 
-  useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-
+  const generate = async () => {
+    setLoading(true);
+    setFailed(false);
     const topic = FINANCE_TIP_TOPICS[Math.floor(Math.random() * FINANCE_TIP_TOPICS.length)];
 
     const prompt = `20·30대를 위한 "오늘의 금융 상식" 1개를 만들어줘. 오늘의 주제는 "${topic}"이야.
@@ -805,35 +805,50 @@ function DailyFinanceTipCard() {
 - 다른 말 없이 아래 JSON 형식으로만 답해:
 {"title": "12자 이내 제목", "desc": "2~3문장 설명, 존댓말로"}`;
 
-    (async () => {
-      try {
-        const res = await fetch("/api/coach-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
-        });
-        let text = "";
-        if (res.ok && res.body) {
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            text += decoder.decode(value, { stream: true });
-          }
+    try {
+      const res = await fetch("/api/coach-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+      });
+      let text = "";
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          text += decoder.decode(value, { stream: true });
         }
-        const match = text.match(/\{[\s\S]*\}/);
-        if (!match) throw new Error("no json");
-        const parsed = JSON.parse(match[0]);
-        if (!parsed.title || !parsed.desc) throw new Error("missing fields");
-        setTip({ title: String(parsed.title), desc: String(parsed.desc) });
-      } catch {
-        setFailed(true);
       }
-    })();
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("no json");
+      const parsed = JSON.parse(match[0]);
+      if (!parsed.title || !parsed.desc) throw new Error("missing fields");
+      const newTip = { title: String(parsed.title), desc: String(parsed.desc) };
+      setTip(newTip);
+      saveDailyFinanceTip({ date: localDateStr(new Date()), ...newTip });
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
+
+    const today = localDateStr(new Date());
+    const cached = loadDailyFinanceTip();
+    if (cached && cached.date === today) {
+      setTip({ title: cached.title, desc: cached.desc });
+      return;
+    }
+    void generate();
   }, []);
 
-  if (failed || !tip) return null;
+  if (!tip) return null;
 
   return (
     <div
@@ -843,9 +858,28 @@ function DailyFinanceTipCard() {
         borderRadius: "10px",
         padding: "14px",
         marginBottom: "10px",
+        opacity: loading ? 0.6 : 1,
       }}
     >
-      <p style={{ fontSize: "11px", fontWeight: 700, color: "#9a3412" }}>✨ 오늘의 금융 상식 (AI 생성)</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <p style={{ fontSize: "11px", fontWeight: 700, color: "#9a3412" }}>✨ 오늘의 금융 상식 (AI 생성)</p>
+        <button
+          onClick={generate}
+          disabled={loading}
+          aria-label="다른 상식 보기"
+          title="다른 상식 보기"
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "13px",
+            color: "#9a3412",
+            cursor: loading ? "default" : "pointer",
+            padding: "2px 4px",
+          }}
+        >
+          {loading ? "..." : "🔄"}
+        </button>
+      </div>
       <p style={{ fontWeight: 800, fontSize: "14px", marginTop: "4px" }}>{tip.title}</p>
       <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px", lineHeight: 1.5 }}>{tip.desc}</p>
     </div>
@@ -2167,6 +2201,27 @@ function dismissPersonalizedNewsNoticeToday() {
   }
 }
 
+type DailyFinanceTip = { date: string; title: string; desc: string };
+
+const DAILY_FINANCE_TIP_KEY = "moneyup_daily_finance_tip";
+
+function loadDailyFinanceTip(): DailyFinanceTip | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DAILY_FINANCE_TIP_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDailyFinanceTip(tip: DailyFinanceTip) {
+  try {
+    window.localStorage.setItem(DAILY_FINANCE_TIP_KEY, JSON.stringify(tip));
+  } catch {
+    // ignore
+  }
+}
 
 function loadMorningLetter(): MorningLetter | null {
   if (typeof window === "undefined") return null;
@@ -2982,15 +3037,15 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ display: "flex", alignItems: "stretch", maxWidth: "calc(100vw - 40px)", overflowX: "auto" }}
+        className="trade-calendar-shell"
+        style={{ position: "relative", display: "flex", alignItems: "stretch" }}
       >
       <div
         style={{
-          position: "relative",
           background: "#fff",
           borderRadius: advicePanel ? "20px 0 0 20px" : "20px",
           padding: "20px",
-          width: "340px",
+          width: "min(340px, calc(100vw - 40px))",
           flexShrink: 0,
           maxHeight: "85vh",
           overflowY: "auto",
@@ -3123,43 +3178,41 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
             </div>
           )}
         </div>
-
       </div>
 
-      {advicePanel && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: "#fff",
-            borderLeft: "1px solid #f0f0f0",
-            borderRadius: "0 20px 20px 0",
-            padding: "18px",
-            width: "240px",
-            flexShrink: 0,
-            maxHeight: "85vh",
-            overflowY: "auto",
-            textAlign: "left",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-            <p style={{ fontWeight: 800, fontSize: "15px" }}>
-              ✨ {advicePanel === "day" ? `${selectedDate} 하루 조언` : `${viewYear}년 ${viewMonth + 1}월 조언`}
-            </p>
-            <button
-              onClick={() => setAdvicePanel(null)}
-              aria-label="조언 패널 닫기"
-              style={{ background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#9ca3af" }}
-            >
-              ✕
-            </button>
+        {advicePanel && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="trade-calendar-advice"
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "#fff",
+              borderRadius: "20px",
+              padding: "20px",
+              overflowY: "auto",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <p style={{ fontWeight: 800, fontSize: "15px" }}>
+                ✨ {advicePanel === "day" ? `${selectedDate} 하루 조언` : `${viewYear}년 ${viewMonth + 1}월 조언`}
+              </p>
+              <button
+                onClick={() => setAdvicePanel(null)}
+                aria-label="조언 패널 닫기"
+                style={{ background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "#9ca3af" }}
+              >
+                ✕
+              </button>
+            </div>
+            {adviceLoading && !adviceText ? (
+              <p style={{ fontSize: "13px", color: "#9ca3af" }}>분석 중이에요...</p>
+            ) : (
+              <p style={{ fontSize: "13px", lineHeight: 1.6, whiteSpace: "pre-wrap", color: "#374151" }}>{adviceText}</p>
+            )}
           </div>
-          {adviceLoading && !adviceText ? (
-            <p style={{ fontSize: "13px", color: "#9ca3af" }}>분석 중이에요...</p>
-          ) : (
-            <p style={{ fontSize: "13px", lineHeight: 1.6, whiteSpace: "pre-wrap", color: "#374151" }}>{adviceText}</p>
-          )}
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

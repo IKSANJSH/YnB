@@ -60,3 +60,16 @@ input {
     padding-bottom: 0 !important;
   }
 }
+
+/* 거래 캘린더의 AI 조언 패널: 좁은 화면에서는 캘린더 위에 겹치는 팝업,
+   폭이 충분하면(카드 340px + 패널 240px가 여유롭게 들어가는 폭) 원래처럼 옆에 붙는 패널 */
+@media (min-width: 660px) {
+  .trade-calendar-advice {
+    position: static !important;
+    inset: auto !important;
+    width: 240px !important;
+    flex-shrink: 0 !important;
+    border-radius: 0 20px 20px 0 !important;
+    border-left: 1px solid #f0f0f0 !important;
+  }
+}
