@@ -1000,7 +1000,7 @@ function HomePage({ userId }: { userId: string | null }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && runSearch()}
-            placeholder="관심 기업 검색 (예: 삼성전자)"
+            placeholder="검색"
             style={{
               flex: 1,
               padding: "9px 12px",
