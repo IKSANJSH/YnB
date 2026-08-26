@@ -143,7 +143,7 @@ const TAB_ITEMS: { key: "home" | "quiz" | "invest" | "ai"; icon: string; label: 
   { key: "home", icon: "🏠", label: "홈" },
   { key: "quiz", icon: "❓", label: "퀴즈" },
   { key: "invest", icon: "📈", label: "모의투자" },
-  { key: "ai", icon: "✨", label: "AI 피드백" },
+  { key: "ai", icon: "✨", label: "AI챗봇" },
 ];
 
 function TabBar({
@@ -1632,6 +1632,24 @@ async function fetchNewsHeadlines(query: string, label?: string): Promise<string
     return `\n\n[${label ?? query} 관련 최근 뉴스 헤드라인]\n${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}`;
   } catch {
     return "";
+  }
+}
+
+type NewsSource = { title: string; link: string; source: string };
+
+async function fetchNewsWithSources(query: string, label?: string): Promise<{ context: string; sources: NewsSource[] }> {
+  try {
+    const res = await fetch(`/api/news?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    const sources: NewsSource[] = (data.items ?? [])
+      .slice(0, 5)
+      .map((n: { title: string; link: string; source: string }) => ({ title: n.title, link: n.link, source: n.source }))
+      .filter((n: NewsSource) => n.title && n.link);
+    if (!sources.length) return { context: "", sources: [] };
+    const context = `\n\n[${label ?? query} 관련 최근 뉴스 헤드라인]\n${sources.map((h, i) => `${i + 1}. ${h.title}`).join("\n")}`;
+    return { context, sources };
+  } catch {
+    return { context: "", sources: [] };
   }
 }
 
@@ -3734,6 +3752,7 @@ function AiCoachPage({ userId }: { userId: string | null }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [newsSources, setNewsSources] = useState<Record<number, NewsSource[]>>({});
 
   useEffect(() => {
     if (!userId) return;
@@ -3746,13 +3765,17 @@ function AiCoachPage({ userId }: { userId: string | null }) {
     const text = input.trim();
     if (!text || sending) return;
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }];
+    const assistantIndex = nextMessages.length;
     setMessages([...nextMessages, { role: "assistant", content: "" }]);
     if (userId) void insertAiMessage(userId, "coach", { role: "user", content: text });
     setInput("");
     setSending(true);
     setError("");
 
-    const newsContext = looksLikeMarketQuestion(text) ? await fetchNewsHeadlines(text) : "";
+    const { context: newsContext, sources } = looksLikeMarketQuestion(text)
+      ? await fetchNewsWithSources(text)
+      : { context: "", sources: [] };
+    if (sources.length) setNewsSources((prev) => ({ ...prev, [assistantIndex]: sources }));
     const apiMessages: ChatMessage[] = [
       ...messages,
       { role: "user", content: newsContext ? `${text}${newsContext}` : text },
@@ -3790,6 +3813,11 @@ function AiCoachPage({ userId }: { userId: string | null }) {
     } catch (e) {
       setError(e instanceof Error && e.name === "AbortError" ? "응답이 너무 오래 걸려요. 잠시 후 다시 시도해주세요" : e instanceof Error ? e.message : "오류가 발생했어요");
       setMessages((prev) => prev.slice(0, -1));
+      setNewsSources((prev) => {
+        const next = { ...prev };
+        delete next[assistantIndex];
+        return next;
+      });
     } finally {
       clearTimeout(timeout);
       setSending(false);
@@ -3807,7 +3835,7 @@ function AiCoachPage({ userId }: { userId: string | null }) {
           textAlign: "left",
         }}
       >
-        <p style={{ fontWeight: 800, fontSize: "14px", color: "#9a3412" }}>✨ AI 피드백</p>
+        <p style={{ fontWeight: 800, fontSize: "14px", color: "#9a3412" }}>✨ AI챗봇</p>
         <p style={{ fontSize: "12px", color: "#9a3412", marginTop: "4px", lineHeight: 1.5 }}>
           일반적인 금융 습관 코칭이에요. 특정 종목 매수·매도 추천이나 수익 보장은 하지 않아요 — 실제 투자
           결정은 반드시 전문가와 상담하세요.
@@ -3828,7 +3856,10 @@ function AiCoachPage({ userId }: { userId: string | null }) {
         }}
       >
         {messages.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+          <div
+            key={i}
+            style={{ display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start", gap: "6px" }}
+          >
             <div
               style={{
                 maxWidth: "80%",
@@ -3843,6 +3874,34 @@ function AiCoachPage({ userId }: { userId: string | null }) {
             >
               {m.content || (sending && i === messages.length - 1 ? "..." : "")}
             </div>
+            {newsSources[i] && newsSources[i].length > 0 && (
+              <div
+                style={{
+                  maxWidth: "80%",
+                  padding: "10px 12px",
+                  borderRadius: "12px",
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280", marginBottom: "6px" }}>
+                  📰 실제 뉴스로 확인하기 (가짜뉴스·AI 오류 여부는 원문에서 직접 확인하세요)
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {newsSources[i].map((n, j) => (
+                    <a
+                      key={j}
+                      href={n.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "12px", color: "#c2410c", textDecoration: "none" }}
+                    >
+                      {j + 1}. {n.title} <span style={{ color: "#9ca3af" }}>· {n.source}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -3974,7 +4033,7 @@ export default function Home() {
     home: "머니업",
     quiz: "퀴즈",
     invest: investMode ? `모의투자 ${investMode === "virtual" ? "가상모드" : "실시간모드"}` : "모의투자",
-    ai: "AI 피드백",
+    ai: "AI챗봇",
   };
 
   const handleAccountClick = () => {

@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     async start(controller) {
       try {
         const stream = await client.chat.completions.create({
-          model: "meta/llama-3.1-8b-instruct",
+          model: "google/diffusiongemma-26b-a4b-it",
           messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
           stream: true,
         });
