@@ -3041,9 +3041,10 @@ function TradeCalendarModal({ tradeLog, onClose }: { tradeLog: TradeRecord[]; on
         style={{ position: "relative", display: "flex", alignItems: "stretch" }}
       >
       <div
+        className="trade-calendar-card"
         style={{
           background: "#fff",
-          borderRadius: advicePanel ? "20px 0 0 20px" : "20px",
+          borderRadius: "20px",
           padding: "20px",
           width: "min(340px, calc(100vw - 40px))",
           flexShrink: 0,

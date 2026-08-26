@@ -72,4 +72,9 @@ input {
     border-radius: 0 20px 20px 0 !important;
     border-left: 1px solid #f0f0f0 !important;
   }
+
+  /* 조언 패널이 옆에 붙어있을 때만 캘린더 카드의 오른쪽 모서리를 각지게 이어붙임 */
+  .trade-calendar-shell:has(.trade-calendar-advice) .trade-calendar-card {
+    border-radius: 20px 0 0 20px !important;
+  }
 }
