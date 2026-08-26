@@ -78,12 +78,18 @@ const FINANCE_INFO_CATEGORIES = [
 function Header({
   title,
   userEmail,
-  onAccountClick,
+  onLogin,
+  onEditAccount,
+  onLogoutRequest,
 }: {
   title: string;
   userEmail?: string | null;
-  onAccountClick?: () => void;
+  onLogin?: () => void;
+  onEditAccount?: () => void;
+  onLogoutRequest?: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div
       style={{
@@ -105,35 +111,102 @@ function Header({
       <h1 style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textAlign: "left" }}>
         {title}
       </h1>
-      {onAccountClick && (
-        <button
-          onClick={onAccountClick}
-          title={userEmail ? "회원정보 수정" : "로그인"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "6px 12px",
-            borderRadius: "999px",
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-            fontSize: "13px",
-            fontWeight: 700,
-            color: userEmail ? "#374151" : "#f97316",
-            cursor: "pointer",
-          }}
-        >
-          {userEmail ? (
+      {(onLogin || userEmail) && (
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => (userEmail ? setMenuOpen((v) => !v) : onLogin?.())}
+            title={userEmail ? "계정 메뉴" : "로그인"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              borderRadius: "999px",
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: userEmail ? "#374151" : "#f97316",
+              cursor: "pointer",
+            }}
+          >
+            {userEmail ? (
+              <>
+                <span style={{ fontSize: "15px" }}>👤</span>
+                <span style={{ maxWidth: "90px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {userEmail}
+                </span>
+              </>
+            ) : (
+              "로그인"
+            )}
+          </button>
+
+          {menuOpen && (
             <>
-              <span style={{ fontSize: "15px" }}>👤</span>
-              <span style={{ maxWidth: "90px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {userEmail}
-              </span>
+              <div
+                onClick={() => setMenuOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 15 }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  zIndex: 16,
+                  background: "#fff",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                  minWidth: "150px",
+                  overflow: "hidden",
+                  textAlign: "left",
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEditAccount?.();
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "none",
+                    border: "none",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#374151",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  회원정보 수정
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onLogoutRequest?.();
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "none",
+                    border: "none",
+                    borderTop: "1px solid #f2f2f7",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#dc2626",
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  로그아웃
+                </button>
+              </div>
             </>
-          ) : (
-            "로그인"
           )}
-        </button>
+        </div>
       )}
     </div>
   );
@@ -504,7 +577,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AccountModal({ user, onClose, onSignOut }: { user: User; onClose: () => void; onSignOut: () => void }) {
+function AccountModal({ user, onClose }: { user: User; onClose: () => void }) {
   const [nickname, setNickname] = useState((user.user_metadata?.nickname as string) ?? "");
   const [nicknameStatus, setNicknameStatus] = useState("");
   const [nicknameLoading, setNicknameLoading] = useState(false);
@@ -607,16 +680,48 @@ function AccountModal({ user, onClose, onSignOut }: { user: User; onClose: () =>
         {passwordStatus && (
           <p style={{ fontSize: "12px", color: passwordStatus === "비밀번호를 변경했어요" ? "#16a34a" : "#dc2626", marginTop: "8px" }}>{passwordStatus}</p>
         )}
+      </div>
+    </div>
+  );
+}
 
-        <button
-          onClick={() => {
-            onSignOut();
-            onClose();
-          }}
-          style={{ marginTop: "24px", width: "100%", padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
-        >
-          로그아웃
-        </button>
+function LogoutConfirmModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 90,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
+      >
+        <p style={{ fontWeight: 800, fontSize: "16px" }}>로그아웃 하시겠습니까?</p>
+        <div style={{ display: "flex", gap: "8px", marginTop: "18px" }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#f2f2f7", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+          >
+            취소
+          </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            style={{ flex: 1, padding: "12px", borderRadius: "10px", border: "none", background: "#dc2626", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+          >
+            로그아웃
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -752,7 +857,7 @@ ${tradesText || "(거래 기록 없음)"}
       } catch {
         finalText = "";
       }
-      if (!finalText) finalText = "오늘은 편지를 불러오지 못했어요. 잠시 후 다시 열어봐 주세요.";
+      if (!finalText) finalText = "편지를 불러오지 못했어요. 잠시 후 다시 열어봐 주세요.";
       setContent(finalText);
       setStatus("ready");
       if (userId) await saveMorningLetterDb(userId, today, finalText);
@@ -1737,6 +1842,41 @@ function saveTradeLog(log: TradeRecord[]) {
   }
 }
 
+type InvestSetup = {
+  cash: number;
+  assets: InvestAsset[];
+  mode: InvestMode;
+  holdings: Record<string, { qty: number; avgPrice: number }>;
+};
+
+const INVEST_SETUP_KEY = "moneyup_invest_setup";
+
+function loadInvestSetupLocal(): InvestSetup | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(INVEST_SETUP_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveInvestSetupLocal(setup: InvestSetup) {
+  try {
+    window.localStorage.setItem(INVEST_SETUP_KEY, JSON.stringify(setup));
+  } catch {
+    // ignore
+  }
+}
+
+function clearInvestSetupLocal() {
+  try {
+    window.localStorage.removeItem(INVEST_SETUP_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 type QuizResult = {
   id: string;
   date: string;
@@ -1778,6 +1918,21 @@ type MorningLetter = { date: string; content: string };
 
 const MORNING_LETTER_KEY = "moneyup_morning_letter";
 const MORNING_LETTER_SEEN_PREFIX = "moneyup_morning_letter_seen_";
+
+const GUEST_INVEST_WARNING_DISMISSED_PREFIX = "moneyup_guest_invest_warning_dismissed_";
+
+function isGuestInvestWarningDismissedToday(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!window.localStorage.getItem(`${GUEST_INVEST_WARNING_DISMISSED_PREFIX}${localDateStr(new Date())}`);
+}
+
+function dismissGuestInvestWarningToday() {
+  try {
+    window.localStorage.setItem(`${GUEST_INVEST_WARNING_DISMISSED_PREFIX}${localDateStr(new Date())}`, "1");
+  } catch {
+    // ignore
+  }
+}
 
 function loadMorningLetter(): MorningLetter | null {
   if (typeof window === "undefined") return null;
@@ -3065,6 +3220,7 @@ function InvestSession({
     setSelected((prev) => (newAssets.some((a) => a.symbol === prev) ? prev : newAssets[0].symbol));
     setEditingAssets(false);
     if (userId) void savePortfolio(userId, { cash, mode, assets: newAssets, holdings });
+    else saveInvestSetupLocal({ cash, mode, assets: newAssets, holdings });
   };
 
   const buy = () => {
@@ -3126,6 +3282,7 @@ function InvestSession({
     setCash(nextCash);
     setHoldings(nextHoldings);
     if (userId) void savePortfolio(userId, { cash: nextCash, mode, assets, holdings: nextHoldings });
+    else saveInvestSetupLocal({ cash: nextCash, mode, assets, holdings: nextHoldings });
     const now = new Date();
     const record: TradeRecord = {
       id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -3644,14 +3801,10 @@ function InvestPage({
   onGoHome: () => void;
   onModeChange: (mode: InvestMode | null) => void;
 }) {
-  const [setup, setSetup] = useState<{
-    cash: number;
-    assets: InvestAsset[];
-    mode: InvestMode;
-    holdings: Record<string, { qty: number; avgPrice: number }>;
-  } | null>(null);
+  const [setup, setSetup] = useState<InvestSetup | null>(() => (userId ? null : loadInvestSetupLocal()));
   const [checking, setChecking] = useState(!!userId);
-  const [guestWarningOpen, setGuestWarningOpen] = useState(!userId);
+  const [guestWarningOpen, setGuestWarningOpen] = useState(() => !userId && !isGuestInvestWarningDismissedToday());
+  const [dontShowWarningToday, setDontShowWarningToday] = useState(false);
 
   useEffect(() => {
     onModeChange(setup?.mode ?? null);
@@ -3694,10 +3847,21 @@ function InvestPage({
       >
         <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "8px" }}>⚠️ 로그인하지 않은 상태예요</p>
         <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6 }}>
-          비로그인 상태에서 모의투자를 진행하면 거래 기록과 투자 내역이 저장되지 않아요.
+          비로그인 상태에서는 모의투자 내역은 임시로 저장돼요. 다른 기기·브라우저에서는 이어볼 수 없고, 캐시를 지우면 함께 사라져요.
         </p>
+        <label style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#6b7280", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={dontShowWarningToday}
+            onChange={(e) => setDontShowWarningToday(e.target.checked)}
+          />
+          오늘은 다시 보지 않기
+        </label>
         <button
-          onClick={() => setGuestWarningOpen(false)}
+          onClick={() => {
+            if (dontShowWarningToday) dismissGuestInvestWarningToday();
+            setGuestWarningOpen(false);
+          }}
           style={{ marginTop: "16px", width: "100%", padding: "12px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
         >
           확인
@@ -3715,6 +3879,7 @@ function InvestPage({
             const holdings = {};
             setSetup({ cash, assets, mode, holdings });
             if (userId) void savePortfolio(userId, { cash, mode, assets, holdings });
+            else saveInvestSetupLocal({ cash, assets, mode, holdings });
           }}
           onGoHome={onGoHome}
         />
@@ -3733,6 +3898,7 @@ function InvestPage({
         userId={userId}
         onReset={() => {
           if (userId) void deletePortfolio(userId);
+          else clearInvestSetupLocal();
           setSetup(null);
         }}
       />
@@ -4005,6 +4171,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [investMode, setInvestMode] = useState<InvestMode | null>(null);
   const migratingRef = useRef<Set<string>>(new Set());
 
@@ -4036,14 +4203,6 @@ export default function Home() {
     ai: "AI챗봇",
   };
 
-  const handleAccountClick = () => {
-    if (user) {
-      setAccountOpen(true);
-    } else {
-      setAuthOpen(true);
-    }
-  };
-
   const userId = user?.id ?? null;
   const userLabel = (user?.user_metadata?.nickname as string) || user?.email;
 
@@ -4060,7 +4219,13 @@ export default function Home() {
       }}
     >
       <div style={{ width: "100%", maxWidth: "640px", display: "flex", justifyContent: "flex-start" }}>
-        <Header title={titles[page]} userEmail={userLabel} onAccountClick={handleAccountClick} />
+        <Header
+          title={titles[page]}
+          userEmail={userLabel}
+          onLogin={() => setAuthOpen(true)}
+          onEditAccount={() => setAccountOpen(true)}
+          onLogoutRequest={() => setLogoutConfirmOpen(true)}
+        />
       </div>
 
       {page === "home" && <HomePage userId={userId} />}
@@ -4071,11 +4236,11 @@ export default function Home() {
       <TabBar active={page} onNavigate={setPage} />
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-      {accountOpen && user && (
-        <AccountModal
-          user={user}
-          onClose={() => setAccountOpen(false)}
-          onSignOut={() => supabase?.auth.signOut()}
+      {accountOpen && user && <AccountModal user={user} onClose={() => setAccountOpen(false)} />}
+      {logoutConfirmOpen && (
+        <LogoutConfirmModal
+          onClose={() => setLogoutConfirmOpen(false)}
+          onConfirm={() => supabase?.auth.signOut()}
         />
       )}
     </main>
