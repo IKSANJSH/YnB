@@ -28,12 +28,18 @@ const FINANCE_INFO_CATEGORIES = [
     icon: "📈",
     title: "투자",
     items: [
-      { title: "적립식 투자 (ETF·펀드)", desc: "매달 일정 금액을 자동으로 투자해 시점 리스크를 분산하는 방법. 소액으로 시작하기 좋다." },
-      { title: "분산투자", desc: "한 종목·자산에 몰빵하지 않고 여러 섹터·지역에 나눠 담아 리스크를 낮춘다." },
-      { title: "소액 투자 플랫폼 활용", desc: "토스증권·카카오페이증권 등에서 1,000원 단위로도 국내외 주식·ETF 투자가 가능하다." },
-      { title: "장기 투자 마인드", desc: "단기 시세 변동에 일희일비하지 않고, 목표 기간을 정해두고 꾸준히 유지하는 것이 핵심." },
-      { title: "배당주·배당 ETF", desc: "정기적으로 배당금이 들어오는 자산에 투자해 현금흐름을 만드는 전략." },
-      { title: "투자 전 리스크 관리", desc: "투자 금액은 감당 가능한 손실 범위 안에서만, 여유자금으로 시작한다." },
+      { title: "적립식 투자 (ETF·펀드)", desc: "매달 일정 금액을 자동으로 투자해 시점 리스크를 분산하는 방법이에요. 소액으로 시작하기 좋아요." },
+      { title: "분산투자", desc: "한 종목·자산에 몰빵하지 않고 여러 섹터·지역에 나눠 담아 리스크를 낮춰요." },
+      { title: "소액 투자 플랫폼 활용", desc: "토스증권·카카오페이증권 등에서 1,000원 단위로도 국내외 주식·ETF 투자가 가능해요." },
+      { title: "장기 투자 마인드", desc: "단기 시세 변동에 일희일비하지 않고, 목표 기간을 정해두고 꾸준히 유지하는 것이 핵심이에요." },
+      { title: "배당주·배당 ETF", desc: "정기적으로 배당금이 들어오는 자산에 투자해 현금흐름을 만드는 전략이에요." },
+      { title: "투자 전 리스크 관리", desc: "투자 금액은 감당 가능한 손실 범위 안에서만, 여유자금으로 시작해요." },
+      { title: "ETF 기초 이해하기", desc: "여러 종목을 한 번에 담은 펀드형 상품이에요. 개별 종목 분석이 어려울 때 시장 전체에 투자하는 효과를 낼 수 있어요." },
+      { title: "적립식 vs 거치식", desc: "매달 나눠 투자하면 평균 매수 단가를 낮출 수 있고, 목돈을 한 번에 넣으면 상승장에서 유리할 수 있어요. 성향에 맞게 선택해요." },
+      { title: "세금 우대 계좌 활용", desc: "ISA·연금저축 같은 세제 혜택 계좌를 활용하면 같은 수익이라도 세금 부담을 줄일 수 있어요." },
+      { title: "투자 성향 파악하기", desc: "증권사 앱의 투자성향 진단을 먼저 해보면 나에게 맞는 자산 비중을 정하는 데 도움이 돼요." },
+      { title: "리밸런싱 습관", desc: "정기적으로 포트폴리오 비중을 원래 목표대로 다시 맞춰주면 리스크를 일정하게 유지할 수 있어요." },
+      { title: "매수·매도 이유 기록하기", desc: "왜 그 종목을 샀는지 이유를 기록해두면 나중에 내 투자 판단을 돌아보고 배울 수 있어요." },
     ],
   },
   {
@@ -41,12 +47,16 @@ const FINANCE_INFO_CATEGORIES = [
     icon: "🏦",
     title: "적금",
     items: [
-      { title: "청년도약계좌", desc: "정부 매칭지원금을 얹어주는 청년 전용 5년 만기 상품. 목돈 마련의 대표 상품으로 꼽힌다." },
-      { title: "청년희망적금", desc: "저축장려금을 지원해주는 청년 전용 적금. 만기 시 우대금리 혜택도 함께 확인하자." },
-      { title: "자유적립식 vs 정기적금", desc: "매달 금액이 유동적이면 자유적립식, 고정 금액을 꾸준히 넣을 수 있다면 정기적금이 유리하다." },
-      { title: "파킹통장", desc: "하루만 맡겨도 이자가 붙는 통장. 비상금이나 단기 목돈을 보관하기 좋다." },
-      { title: "풍차적금", desc: "매달 새 적금에 가입해 만기를 분산시켜, 매달 목돈이 들어오는 구조를 만드는 방법." },
-      { title: "특판 적금 확인하기", desc: "은행 앱의 이벤트·특판 상품은 금리가 높은 경우가 많으니 주기적으로 확인하자." },
+      { title: "청년도약계좌", desc: "정부 매칭지원금을 얹어주는 청년 전용 5년 만기 상품이에요. 목돈 마련의 대표 상품으로 꼽혀요." },
+      { title: "청년희망적금", desc: "저축장려금을 지원해주는 청년 전용 적금이에요. 만기 시 우대금리 혜택도 함께 확인해보세요." },
+      { title: "자유적립식 vs 정기적금", desc: "매달 금액이 유동적이면 자유적립식, 고정 금액을 꾸준히 넣을 수 있다면 정기적금이 유리해요." },
+      { title: "파킹통장", desc: "하루만 맡겨도 이자가 붙는 통장이에요. 비상금이나 단기 목돈을 보관하기 좋아요." },
+      { title: "풍차적금", desc: "매달 새 적금에 가입해 만기를 분산시켜, 매달 목돈이 들어오는 구조를 만드는 방법이에요." },
+      { title: "특판 적금 확인하기", desc: "은행 앱의 이벤트·특판 상품은 금리가 높은 경우가 많으니 주기적으로 확인해보세요." },
+      { title: "만기 자동 연장 확인", desc: "적금 만기 후 자동으로 예금 전환되는 경우가 있으니, 만기 시점에 다시 굴릴지 미리 계획해두면 좋아요." },
+      { title: "적금 담보대출 활용", desc: "급하게 돈이 필요할 때 적금을 깨는 대신, 적금을 담보로 대출을 받는 방법도 있어요." },
+      { title: "목적별 통장 나누기", desc: "여행 자금, 결혼 자금처럼 목적별로 통장을 나누면 목표 달성 여부를 한눈에 확인할 수 있어요." },
+      { title: "예금자보호제도 확인", desc: "은행이 어려워져도 예금자보호제도를 통해 일정 금액까지는 보호받을 수 있으니 알아두면 안심이 돼요." },
     ],
   },
   {
@@ -54,12 +64,16 @@ const FINANCE_INFO_CATEGORIES = [
     icon: "💳",
     title: "신용점수",
     items: [
-      { title: "연체 없이 상환하기", desc: "금액이 적더라도 연체 없이 매달 꾸준히 상환하는 것이 신용점수에 가장 크게 작용한다." },
-      { title: "카드 한도 30% 이하 사용", desc: "신용카드 한도 대비 사용 비율(신용카드 이용률)이 낮을수록 점수에 유리하다." },
-      { title: "자동이체로 고정지출 관리", desc: "통신비·공과금 등을 자동이체로 설정해두면 실수로 인한 연체를 막을 수 있다." },
-      { title: "정기적으로 점수 조회하기", desc: "토스·뱅크샐러드 등에서 무료로 신용점수를 조회하며 변화를 꾸준히 확인하자." },
-      { title: "비금융 정보 등록", desc: "통신비·공공요금 납부 내역을 성실납부 정보로 등록하면 가점을 받을 수 있다." },
-      { title: "카드론·현금서비스 주의", desc: "단기 대출을 자주 이용하면 신용점수에 부정적인 영향을 줄 수 있으니 최소화한다." },
+      { title: "연체 없이 상환하기", desc: "금액이 적더라도 연체 없이 매달 꾸준히 상환하는 것이 신용점수에 가장 크게 작용해요." },
+      { title: "카드 한도 30% 이하 사용", desc: "신용카드 한도 대비 사용 비율(신용카드 이용률)이 낮을수록 점수에 유리해요." },
+      { title: "자동이체로 고정지출 관리", desc: "통신비·공과금 등을 자동이체로 설정해두면 실수로 인한 연체를 막을 수 있어요." },
+      { title: "정기적으로 점수 조회하기", desc: "토스·뱅크샐러드 등에서 무료로 신용점수를 조회하며 변화를 꾸준히 확인해보세요." },
+      { title: "비금융 정보 등록", desc: "통신비·공공요금 납부 내역을 성실납부 정보로 등록하면 가점을 받을 수 있어요." },
+      { title: "카드론·현금서비스 주의", desc: "단기 대출을 자주 이용하면 신용점수에 부정적인 영향을 줄 수 있으니 최소화해요." },
+      { title: "신용카드 발급 개수 관리", desc: "짧은 기간에 여러 카드를 발급받으면 신용점수에 부정적인 영향을 줄 수 있으니 신중하게 결정해요." },
+      { title: "오래된 계좌 유지하기", desc: "오래 사용한 신용카드나 계좌를 유지하면 신용 거래 기간이 길어져 점수에 도움이 될 수 있어요." },
+      { title: "본인 조회는 걱정 없이", desc: "본인이 직접 신용점수를 조회하는 것은 점수에 영향을 주지 않으니, 걱정 없이 자주 확인해도 돼요." },
+      { title: "중도상환 계획 세우기", desc: "대출을 미리 갚을 계획이 있다면, 중도상환 조건을 먼저 확인해두면 도움이 돼요." },
     ],
   },
   {
@@ -67,10 +81,14 @@ const FINANCE_INFO_CATEGORIES = [
     icon: "🛟",
     title: "비상금·지출관리",
     items: [
-      { title: "비상금 통장 분리", desc: "생활비 통장과 분리해 3~6개월치 생활비를 파킹통장에 따로 모아두는 습관." },
-      { title: "예산 카테고리 나누기", desc: "고정지출·변동지출·저축을 나눠 예산을 짜면 새는 돈을 줄일 수 있다." },
-      { title: "무지출 데이 만들기", desc: "일주일에 하루는 지출을 하지 않는 날을 정해 소비 습관을 점검한다." },
-      { title: "구독 서비스 점검", desc: "매달 자동결제되는 구독 서비스 목록을 확인하고 안 쓰는 건 정리한다." },
+      { title: "비상금 통장 분리", desc: "생활비 통장과 분리해 3~6개월치 생활비를 파킹통장에 따로 모아두는 습관이에요." },
+      { title: "예산 카테고리 나누기", desc: "고정지출·변동지출·저축을 나눠 예산을 짜면 새는 돈을 줄일 수 있어요." },
+      { title: "무지출 데이 만들기", desc: "일주일에 하루는 지출을 하지 않는 날을 정해 소비 습관을 점검해요." },
+      { title: "구독 서비스 점검", desc: "매달 자동결제되는 구독 서비스 목록을 확인하고 안 쓰는 건 정리해요." },
+      { title: "선저축 후소비 습관", desc: "월급이 들어오면 먼저 저축·투자할 금액을 떼어두고, 남은 돈으로 생활하는 순서를 지켜요." },
+      { title: "가계부 앱 활용하기", desc: "자동으로 소비 내역을 분류해주는 가계부 앱을 쓰면 지출 패턴을 파악하기 쉬워져요." },
+      { title: "충동구매 하루 미뤄보기", desc: "갖고 싶은 게 생기면 바로 사지 않고 하루 정도 미뤄보면, 꼭 필요한 소비인지 판단하기 좋아요." },
+      { title: "저축 비율 목표 세우기", desc: "소득의 일정 비율을 저축·투자하는 나만의 기준을 정해두면 지출을 조절하는 기준이 생겨요." },
     ],
   },
 ];
@@ -739,7 +757,98 @@ function timeAgo(pubDate: string) {
   return `${Math.floor(hours / 24)}일 전`;
 }
 
-const NEWS_CATEGORIES = ["전체", "금융", "증권", "산업", "IT", "부동산"];
+const NEWS_CATEGORIES = ["전체", "금융", "증권", "산업", "IT", "부동산", "해외뉴스"];
+
+const FINANCE_TIP_TOPICS = [
+  "복리의 힘",
+  "분산투자",
+  "예산 카테고리 나누기",
+  "신용점수 관리 습관",
+  "비상금의 중요성",
+  "목표를 정해두고 저축하기",
+  "소비 습관 점검하기",
+  "자동이체·자동저축의 힘",
+  "선저축 후소비",
+  "감당 가능한 손실 범위에서 투자하기",
+  "장기 투자 마인드",
+  "기회비용 이해하기",
+  "인플레이션과 현금 가치",
+  "지출 기록의 힘",
+  "구독 서비스 점검하기",
+  "대출과 이자의 이해",
+  "자산과 부채의 차이",
+  "저축과 투자의 차이",
+];
+
+function DailyFinanceTipCard() {
+  const [tip, setTip] = useState<{ title: string; desc: string } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const didInit = useRef(false);
+
+  useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
+
+    const topic = FINANCE_TIP_TOPICS[Math.floor(Math.random() * FINANCE_TIP_TOPICS.length)];
+
+    const prompt = `20·30대를 위한 "오늘의 금융 상식" 1개를 만들어줘. 오늘의 주제는 "${topic}"이야.
+
+반드시 지킬 것:
+- 반드시 "${topic}" 주제로만 써. 다른 주제로 바꾸지 마.
+- 문장은 전부 존댓말(해요체: ~해요, ~돼요, ~좋아요 등)로 끝내. "~다", "~하자" 같은 반말·평서체는 쓰지 마.
+- 금리·금액·기한처럼 시기에 따라 바뀌거나 틀릴 수 있는 구체적인 수치는 절대 넣지 마. (예: "연 3.5%", "최대 5천만원" 같은 표현 금지)
+- 특정 금융 상품명이 필요하면 청년도약계좌·청년희망적금처럼 이미 널리 알려진 것만 이름만 언급하고, 세부 조건(금리·한도·기간)은 쓰지 마.
+- 확실하지 않은 사실은 아예 쓰지 말고, 시간이 지나도 변하지 않는 금융 상식만 다뤄.
+- 자주 나오는 뻔한 설명 말고, 새로운 예시나 비유로 설명해줘.
+- 다른 말 없이 아래 JSON 형식으로만 답해:
+{"title": "12자 이내 제목", "desc": "2~3문장 설명, 존댓말로"}`;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/coach-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+        });
+        let text = "";
+        if (res.ok && res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            text += decoder.decode(value, { stream: true });
+          }
+        }
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error("no json");
+        const parsed = JSON.parse(match[0]);
+        if (!parsed.title || !parsed.desc) throw new Error("missing fields");
+        setTip({ title: String(parsed.title), desc: String(parsed.desc) });
+      } catch {
+        setFailed(true);
+      }
+    })();
+  }, []);
+
+  if (failed || !tip) return null;
+
+  return (
+    <div
+      style={{
+        background: "#fff7ed",
+        border: "1px solid #fed7aa",
+        borderRadius: "10px",
+        padding: "14px",
+        marginBottom: "10px",
+      }}
+    >
+      <p style={{ fontSize: "11px", fontWeight: 700, color: "#9a3412" }}>✨ 오늘의 금융 상식 (AI 생성)</p>
+      <p style={{ fontWeight: 800, fontSize: "14px", marginTop: "4px" }}>{tip.title}</p>
+      <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px", lineHeight: 1.5 }}>{tip.desc}</p>
+    </div>
+  );
+}
 
 function MorningLetterModal({ userId }: { userId: string | null }) {
   const [hasHistory, setHasHistory] = useState<boolean | null>(null);
@@ -786,20 +895,17 @@ function MorningLetterModal({ userId }: { userId: string | null }) {
       setModalOpen(true);
       let finalText = "";
       try {
+        const latestByTime = log.slice().sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+        const isVirtual = latestByTime[0]?.mode === "virtual";
+
         const [usNews, krNews] = await Promise.all([
           fetchNewsHeadlines("미국 경제", "미국 경제"),
           fetchNewsHeadlines("국내 경제", "국내 경제"),
         ]);
         const holdings = deriveHoldingsFromLog(log);
-        const recentSymbols = Array.from(
-          new Set(
-            log
-              .slice()
-              .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
-              .map((t) => t.symbol)
-          )
-        ).slice(0, 5);
-        const symbolNewsParts = await Promise.all(recentSymbols.map((s) => fetchNewsHeadlines(s)));
+        const recentSymbols = Array.from(new Set(latestByTime.map((t) => t.symbol))).slice(0, 5);
+        // 가상모드는 실제 시세가 아닌 연습용 시뮬레이션이라 종목별 실제 뉴스와 가격을 연결지으면 오해를 줄 수 있어 건너뜀
+        const symbolNewsParts = isVirtual ? [] : await Promise.all(recentSymbols.map((s) => fetchNewsHeadlines(s)));
         const recentTrades = log
           .slice()
           .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
@@ -813,7 +919,13 @@ function MorningLetterModal({ userId }: { userId: string | null }) {
               .join(", ")
           : "없음";
 
+        const modeNote = isVirtual
+          ? "이 사용자는 최근 가상모드(실제 시세가 아닌 연습용 가격 시뮬레이션)로 거래했어. 가격 변동은 실제 시장과 무관하니 실제 뉴스나 실제 가격 변동과 절대 연결짓지 말고, 매매 이유의 논리성과 습관을 중심으로만 평가해줘."
+          : "이 사용자는 실제 시세를 그대로 반영하는 실시간모드로 거래했어.";
+
         const prompt = `오늘은 ${today}이야. 사용자에게 매일 아침 보내는 투자 습관 편지를 써줘.
+
+${modeNote}
 
 [최근 미국 경제 뉴스]${usNews || "\n(뉴스 없음)"}
 
@@ -821,9 +933,7 @@ function MorningLetterModal({ userId }: { userId: string | null }) {
 
 [현재 보유 종목]
 ${holdingsText}
-
-[보유·거래 종목 관련 최근 뉴스]${symbolNewsParts.join("") || "\n(뉴스 없음)"}
-
+${isVirtual ? "" : `\n[보유·거래 종목 관련 최근 뉴스]${symbolNewsParts.join("") || "\n(뉴스 없음)"}\n`}
 [최근 매수·매도 기록과 이유]
 ${tradesText || "(거래 기록 없음)"}
 
@@ -833,7 +943,11 @@ ${tradesText || "(거래 기록 없음)"}
 3. 개선하면 좋은 점
 
 작성 시 유의사항:
-- 수익률 결과만으로 평가하지 말고, 뉴스로 확인되는 시장 상황 변화와 사용자가 적은 매수·매도 이유가 서로 논리적으로 맞아떨어지는지를 중요하게 평가해줘.
+${
+  isVirtual
+    ? "- 가상모드 연습 거래이므로 실제 시장 뉴스나 실제 가격 변동과 연결짓지 말고, 매수·매도 이유의 논리성·일관성, 비중 조절 같은 리스크 관리 습관을 중심으로 평가해줘."
+    : "- 수익률 결과만으로 평가하지 말고, 뉴스로 확인되는 시장 상황 변화와 사용자가 적은 매수·매도 이유가 서로 논리적으로 맞아떨어지는지를 중요하게 평가해줘."
+}
 - 특정 종목을 지금 사거나 팔라고 직접 추천하지 마.
 - 편지처럼 다정하고 담백한 톤으로, 인사로 시작해줘.
 - 각 항목은 2~4문장 정도로 구체적으로 써줘.`;
@@ -953,21 +1067,70 @@ function HomePage({ userId }: { userId: string | null }) {
   const [news, setNews] = useState<NewsItem[] | null>(null);
   const [newsError, setNewsError] = useState("");
   const [openInfoCategory, setOpenInfoCategory] = useState<string | null>(null);
+  const [personalizedMode, setPersonalizedMode] = useState(false);
+  const [personalizedNoticeOpen, setPersonalizedNoticeOpen] = useState(false);
+  const [dontShowPersonalizedNoticeToday, setDontShowPersonalizedNoticeToday] = useState(false);
 
   useEffect(() => {
     setNews(null);
     setNewsError("");
-    const url = searchQuery
-      ? `/api/news?q=${encodeURIComponent(searchQuery)}`
-      : `/api/news?category=${encodeURIComponent(category)}`;
-    fetch(url)
+
+    if (searchQuery) {
+      fetch(`/api/news?q=${encodeURIComponent(searchQuery)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.items?.length) setNews(data.items);
+          else setNewsError(data.error || "불러올 뉴스가 없어요");
+        })
+        .catch(() => setNewsError("뉴스를 불러오지 못했어요"));
+      return;
+    }
+
+    if (personalizedMode) {
+      (async () => {
+        try {
+          const log = userId
+            ? (await fetchTrades(userId)).map((t) => ({ symbol: t.symbol }))
+            : loadTradeLog();
+          const symbols = Array.from(new Set(log.map((t) => t.symbol))).slice(0, 5);
+          if (symbols.length === 0) {
+            setNewsError("거래 내역이 없어서 보여드릴 뉴스가 없어요");
+            return;
+          }
+          const results = await Promise.all(
+            symbols.map((s) =>
+              fetch(`/api/news?q=${encodeURIComponent(s)}`)
+                .then((res) => res.json())
+                .catch(() => ({ items: [] as NewsItem[] }))
+            )
+          );
+          const seen = new Set<string>();
+          const merged: NewsItem[] = [];
+          for (const item of results
+            .flatMap((r) => r.items ?? [])
+            .sort((a: NewsItem, b: NewsItem) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())) {
+            if (seen.has(item.link)) continue;
+            seen.add(item.link);
+            merged.push(item);
+            if (merged.length >= 8) break;
+          }
+          if (merged.length) setNews(merged);
+          else setNewsError("거래 내역을 바탕으로 한 뉴스를 찾지 못했어요");
+        } catch {
+          setNewsError("뉴스를 불러오지 못했어요");
+        }
+      })();
+      return;
+    }
+
+    fetch(`/api/news?category=${encodeURIComponent(category)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.items?.length) setNews(data.items);
         else setNewsError(data.error || "불러올 뉴스가 없어요");
       })
       .catch(() => setNewsError("뉴스를 불러오지 못했어요"));
-  }, [category, searchQuery]);
+  }, [category, searchQuery, personalizedMode, userId]);
 
   const runSearch = () => {
     const q = searchInput.trim();
@@ -977,6 +1140,11 @@ function HomePage({ userId }: { userId: string | null }) {
   const clearSearch = () => {
     setSearchInput("");
     setSearchQuery("");
+  };
+
+  const openPersonalizedNews = () => {
+    setPersonalizedMode(true);
+    if (!isPersonalizedNewsNoticeDismissedToday()) setPersonalizedNoticeOpen(true);
   };
 
   return (
@@ -1000,7 +1168,7 @@ function HomePage({ userId }: { userId: string | null }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && runSearch()}
-            placeholder="검색"
+            placeholder="궁금한 기업·분야를 입력해보세요"
             style={{
               flex: 1,
               padding: "9px 12px",
@@ -1053,21 +1221,39 @@ function HomePage({ userId }: { userId: string | null }) {
             {NEWS_CATEGORIES.map((c) => (
               <button
                 key={c}
-                onClick={() => setCategory(c)}
+                onClick={() => {
+                  setCategory(c);
+                  setPersonalizedMode(false);
+                }}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "999px",
                   fontSize: "13px",
                   fontWeight: 700,
                   cursor: "pointer",
-                  border: category === c ? "1px solid #16a34a" : "1px solid #e5e7eb",
-                  background: category === c ? "#f0fdf4" : "#fff",
-                  color: category === c ? "#16a34a" : "#374151",
+                  border: !personalizedMode && category === c ? "1px solid #16a34a" : "1px solid #e5e7eb",
+                  background: !personalizedMode && category === c ? "#f0fdf4" : "#fff",
+                  color: !personalizedMode && category === c ? "#16a34a" : "#374151",
                 }}
               >
                 {c}
               </button>
             ))}
+            <button
+              onClick={openPersonalizedNews}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "999px",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                border: personalizedMode ? "1px solid #f97316" : "1px solid #e5e7eb",
+                background: personalizedMode ? "#fff7ed" : "#fff",
+                color: personalizedMode ? "#f97316" : "#374151",
+              }}
+            >
+              ✨ 맞춤 뉴스
+            </button>
           </div>
         )}
         {news === null && !newsError && (
@@ -1090,7 +1276,7 @@ function HomePage({ userId }: { userId: string | null }) {
                 borderBottom: i < news.length - 1 ? "1px solid #f3f4f6" : "none",
               }}
             >
-              {n.thumbnail ? (
+              {n.thumbnail && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={n.thumbnail}
@@ -1107,22 +1293,6 @@ function HomePage({ userId }: { userId: string | null }) {
                     (e.currentTarget as HTMLImageElement).style.display = "none";
                   }}
                 />
-              ) : (
-                <div
-                  style={{
-                    width: "64px",
-                    height: "64px",
-                    borderRadius: "8px",
-                    background: "#f3f4f6",
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "24px",
-                  }}
-                >
-                  📰
-                </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 700, fontSize: "14px" }}>{n.title}</p>
@@ -1147,6 +1317,7 @@ function HomePage({ userId }: { userId: string | null }) {
         <p style={{ fontWeight: 800, fontSize: "16px", marginBottom: "12px" }}>
           💡 20·30대가 알아야 할 금융 정보
         </p>
+        <DailyFinanceTipCard />
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {FINANCE_INFO_CATEGORIES.map((cat) => {
             const isOpen = openInfoCategory === cat.key;
@@ -1212,6 +1383,51 @@ function HomePage({ userId }: { userId: string | null }) {
           })}
         </div>
       </section>
+
+      {personalizedNoticeOpen && (
+        <div
+          onClick={() => setPersonalizedNoticeOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 90,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: "18px", padding: "22px", width: "100%", maxWidth: "340px", textAlign: "left" }}
+          >
+            <p style={{ fontWeight: 800, fontSize: "16px" }}>✨ 맞춤 뉴스</p>
+            <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.6, marginTop: "8px" }}>
+              사용자가 관심있는 분야를 토대로 알려주는 뉴스입니다.
+              <br />
+              거래내역이 없을시 뉴스가 안보일 수 있습니다.
+            </p>
+            <label style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#6b7280", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={dontShowPersonalizedNoticeToday}
+                onChange={(e) => setDontShowPersonalizedNoticeToday(e.target.checked)}
+              />
+              오늘은 다시 보지 않기
+            </label>
+            <button
+              onClick={() => {
+                if (dontShowPersonalizedNoticeToday) dismissPersonalizedNewsNoticeToday();
+                setPersonalizedNoticeOpen(false);
+              }}
+              style={{ marginTop: "16px", width: "100%", padding: "12px", borderRadius: "10px", border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1933,6 +2149,22 @@ function dismissGuestInvestWarningToday() {
     // ignore
   }
 }
+
+const PERSONALIZED_NEWS_NOTICE_DISMISSED_PREFIX = "moneyup_personalized_news_notice_dismissed_";
+
+function isPersonalizedNewsNoticeDismissedToday(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!window.localStorage.getItem(`${PERSONALIZED_NEWS_NOTICE_DISMISSED_PREFIX}${localDateStr(new Date())}`);
+}
+
+function dismissPersonalizedNewsNoticeToday() {
+  try {
+    window.localStorage.setItem(`${PERSONALIZED_NEWS_NOTICE_DISMISSED_PREFIX}${localDateStr(new Date())}`, "1");
+  } catch {
+    // ignore
+  }
+}
+
 
 function loadMorningLetter(): MorningLetter | null {
   if (typeof window === "undefined") return null;

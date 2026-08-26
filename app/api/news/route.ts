@@ -14,6 +14,7 @@ const FEEDS: Record<string, { url: string; source: string }[]> = {
   산업: [{ url: "https://www.yna.co.kr/rss/industry.xml", source: "연합뉴스" }],
   IT: [{ url: "https://www.hankyung.com/feed/it", source: "한국경제" }],
   부동산: [{ url: "https://www.hankyung.com/feed/realestate", source: "한국경제" }],
+  해외뉴스: [],
 };
 
 function extractTag(xml: string, tag: string) {
@@ -94,6 +95,7 @@ export async function GET(request: Request) {
     산업: "산업",
     IT: "IT",
     부동산: "부동산",
+    해외뉴스: "해외 증시",
   };
 
   try {
