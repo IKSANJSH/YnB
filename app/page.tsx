@@ -143,7 +143,7 @@ const TAB_ITEMS: { key: "home" | "quiz" | "invest" | "ai"; icon: string; label: 
   { key: "home", icon: "🏠", label: "홈" },
   { key: "quiz", icon: "❓", label: "퀴즈" },
   { key: "invest", icon: "📈", label: "모의투자" },
-  { key: "ai", icon: "✨", label: "AI 조언" },
+  { key: "ai", icon: "✨", label: "AI 피드백" },
 ];
 
 function TabBar({
@@ -816,7 +816,7 @@ ${tradesText || "(거래 기록 없음)"}
               textAlign: "left",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
               <p style={{ fontWeight: 800, fontSize: "16px" }}>☀️ 오늘의 투자 편지</p>
               <button
                 onClick={() => setModalOpen(false)}
@@ -826,6 +826,9 @@ ${tradesText || "(거래 기록 없음)"}
                 ✕
               </button>
             </div>
+            <p style={{ fontSize: "11px", color: "#9ca3af", marginBottom: "14px", lineHeight: 1.5 }}>
+              투자 조언이 아니라 모의투자 습관에 대한 AI 피드백이에요. 특정 종목 매수·매도 추천이나 수익 보장은 하지 않아요 — 실제 투자 결정은 반드시 전문가와 상담하세요.
+            </p>
             {status === "loading" ? (
               <p style={{ fontSize: "13px", color: "#9ca3af" }}>편지를 쓰는 중이에요...</p>
             ) : (
@@ -1446,7 +1449,7 @@ function QuizPage({ userId }: { userId: string | null }) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontWeight: 800, fontSize: "16px" }}>🧠 투자 상식 O/X 퀴즈</p>
+          <p style={{ fontWeight: 800, fontSize: "16px" }}>🧠 금융 상식 O/X 퀴즈</p>
           {userId && (
             <button
               onClick={() => setCalendarOpen(true)}
@@ -1577,7 +1580,7 @@ function QuizPage({ userId }: { userId: string | null }) {
           </p>
           <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "10px" }}>
             {correctCount >= 8
-              ? "투자 상식이 탄탄하네요!"
+              ? "금융 상식이 탄탄하네요!"
               : correctCount >= 5
               ? "꽤 알고 있지만 조금 더 공부해봐요"
               : "차근차근 금융 정보를 더 살펴봐요"}
@@ -3804,7 +3807,7 @@ function AiCoachPage({ userId }: { userId: string | null }) {
           textAlign: "left",
         }}
       >
-        <p style={{ fontWeight: 800, fontSize: "14px", color: "#9a3412" }}>✨ AI 투자 조언</p>
+        <p style={{ fontWeight: 800, fontSize: "14px", color: "#9a3412" }}>✨ AI 피드백</p>
         <p style={{ fontSize: "12px", color: "#9a3412", marginTop: "4px", lineHeight: 1.5 }}>
           일반적인 금융 습관 코칭이에요. 특정 종목 매수·매도 추천이나 수익 보장은 하지 않아요 — 실제 투자
           결정은 반드시 전문가와 상담하세요.
@@ -3971,7 +3974,7 @@ export default function Home() {
     home: "머니업",
     quiz: "퀴즈",
     invest: investMode ? `모의투자 ${investMode === "virtual" ? "가상모드" : "실시간모드"}` : "모의투자",
-    ai: "AI 투자 조언",
+    ai: "AI 피드백",
   };
 
   const handleAccountClick = () => {
