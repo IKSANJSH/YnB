@@ -36,3 +36,27 @@ input {
 .shake {
   animation: shake 0.4s;
 }
+
+/* PC(데스크톱) 반응형: 640px 모바일 폭을 넓히고, 하단 탭바를 상단 고정 내비게이션으로 전환 */
+@media (min-width: 900px) {
+  .app-container {
+    max-width: 760px !important;
+  }
+
+  .moneyup-main {
+    padding-bottom: 32px !important;
+  }
+
+  .moneyup-tabbar {
+    position: sticky !important;
+    top: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    order: -1 !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgba(60, 60, 67, 0.12) !important;
+    padding-bottom: 0 !important;
+  }
+}

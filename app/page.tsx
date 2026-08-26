@@ -110,6 +110,7 @@ function Header({
 
   return (
     <div
+      className="app-container"
       style={{
         position: "sticky",
         top: 0,
@@ -246,6 +247,7 @@ function TabBar({
 }) {
   return (
     <div
+      className="moneyup-tabbar"
       style={{
         position: "fixed",
         left: 0,
@@ -261,7 +263,7 @@ function TabBar({
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div style={{ display: "flex", width: "100%", maxWidth: "640px" }}>
+      <div className="app-container" style={{ display: "flex", width: "100%", maxWidth: "640px" }}>
         {TAB_ITEMS.map((item) => {
           const isActive = active === item.key;
           return (
@@ -1148,7 +1150,7 @@ function HomePage({ userId }: { userId: string | null }) {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div className="app-container" style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
       <MorningLetterModal userId={userId} />
 
       <section
@@ -1758,7 +1760,7 @@ function QuizPage({ userId }: { userId: string | null }) {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+    <div className="app-container" style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
       <div
         style={{
           background: "#ffffff",
@@ -3543,7 +3545,7 @@ function InvestSession({
   const maxBuyQty = selectedPrice > 0 ? Math.floor(cash / selectedPrice) : 0;
 
   return (
-    <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
+    <div className="app-container" style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
       <div style={{ background: "#ffffff", borderRadius: "16px", boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)", padding: "20px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontSize: "13px", color: "#6b7280" }}>내 총자산</p>
@@ -3886,26 +3888,47 @@ function InvestSession({
       >
         {aiOpen && (
           <div
+            onClick={() => setAiOpen(false)}
             style={{
-              width: "300px",
-              maxWidth: "calc(100vw - 48px)",
-              background: "#ffffff",
-              border: "2px solid #fed7aa",
-              borderRadius: "14px",
-              padding: "14px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              textAlign: "left",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 70,
               display: "flex",
-              flexDirection: "column",
-              maxHeight: "380px",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
             }}
           >
-            <p style={{ fontWeight: 800, fontSize: "13px", color: "#9a3412", marginBottom: "8px" }}>
-              ✨ AI 코치가 지켜보고 있어요
-            </p>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "380px",
+                maxHeight: "80vh",
+                background: "#ffffff",
+                border: "2px solid #fed7aa",
+                borderRadius: "18px",
+                padding: "18px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+                textAlign: "left",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <p style={{ fontWeight: 800, fontSize: "13px", color: "#9a3412" }}>✨ AI 코치가 지켜보고 있어요</p>
+                <button
+                  onClick={() => setAiOpen(false)}
+                  aria-label="닫기"
+                  style={{ background: "none", border: "none", fontSize: "18px", color: "#9ca3af", cursor: "pointer" }}
+                >
+                  ✕
+                </button>
+              </div>
             <div
               ref={aiScrollRef}
-              style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", flex: 1, minHeight: "80px" }}
+              style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", flex: 1, minHeight: "200px" }}
             >
               {aiMessages.length === 0 && !aiLoading && (
                 <p style={{ fontSize: "13px", color: "#9ca3af" }}>포트폴리오를 살펴보는 중이에요</p>
@@ -3983,6 +4006,7 @@ function InvestSession({
               >
                 전송
               </button>
+            </div>
             </div>
           </div>
         )}
@@ -4223,7 +4247,7 @@ function AiCoachPage({ userId }: { userId: string | null }) {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div className="app-container" style={{ width: "100%", maxWidth: "640px", display: "flex", flexDirection: "column", gap: "12px" }}>
       <div
         style={{
           background: "#fff7ed",
@@ -4440,6 +4464,7 @@ export default function Home() {
 
   return (
     <main
+      className="moneyup-main"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -4450,7 +4475,7 @@ export default function Home() {
         textAlign: "center",
       }}
     >
-      <div style={{ width: "100%", maxWidth: "640px", display: "flex", justifyContent: "flex-start" }}>
+      <div className="app-container" style={{ width: "100%", maxWidth: "640px", display: "flex", justifyContent: "flex-start" }}>
         <Header
           title={titles[page]}
           userEmail={userLabel}
