@@ -34,11 +34,6 @@ export async function insertTrade(userId: string, trade: DbTrade): Promise<void>
   await supabase.from("trades").insert({ user_id: userId, ...trade });
 }
 
-export async function insertTrades(userId: string, trades: DbTrade[]): Promise<void> {
-  if (!supabase || trades.length === 0) return;
-  await supabase.from("trades").insert(trades.map((t) => ({ user_id: userId, ...t })));
-}
-
 export async function fetchMorningLetter(userId: string, date: string): Promise<string | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
@@ -101,15 +96,6 @@ export async function deletePortfolio(userId: string): Promise<void> {
   await supabase.from("portfolios").delete().eq("user_id", userId);
 }
 
-export async function hasAnyTrades(userId: string): Promise<boolean> {
-  if (!supabase) return false;
-  const { count } = await supabase
-    .from("trades")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
-  return !!count && count > 0;
-}
-
 export type DbQuizResult = {
   date: string;
   time: string;
@@ -134,16 +120,3 @@ export async function insertQuizResult(userId: string, result: DbQuizResult): Pr
   await supabase.from("quiz_results").insert({ user_id: userId, ...result });
 }
 
-export async function insertQuizResults(userId: string, results: DbQuizResult[]): Promise<void> {
-  if (!supabase || results.length === 0) return;
-  await supabase.from("quiz_results").insert(results.map((r) => ({ user_id: userId, ...r })));
-}
-
-export async function hasAnyQuizResults(userId: string): Promise<boolean> {
-  if (!supabase) return false;
-  const { count } = await supabase
-    .from("quiz_results")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
-  return !!count && count > 0;
-}

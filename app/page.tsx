@@ -6,19 +6,15 @@ import { supabase } from "@/lib/supabaseClient";
 import {
   fetchTrades,
   insertTrade,
-  insertTrades,
   fetchMorningLetter,
   saveMorningLetterDb,
   fetchAiMessages,
   insertAiMessage,
-  hasAnyTrades,
   fetchPortfolio,
   savePortfolio,
   deletePortfolio,
   fetchQuizResults,
   insertQuizResult,
-  insertQuizResults,
-  hasAnyQuizResults,
 } from "@/lib/db";
 
 
@@ -4423,61 +4419,6 @@ function AiCoachPage({ userId }: { userId: string | null }) {
   );
 }
 
-async function migrateLocalDataToAccount(userId: string) {
-  const migratedKey = `moneyup_migrated_${userId}`;
-  if (window.localStorage.getItem(migratedKey)) return;
-
-  try {
-    const alreadyHasRemoteTrades = await hasAnyTrades(userId);
-    if (!alreadyHasRemoteTrades) {
-      const localTrades = loadTradeLog();
-      if (localTrades.length > 0) {
-        await insertTrades(
-          userId,
-          localTrades.map(({ date, time, symbol, action, qty, price, reason, mode }) => ({
-            date,
-            time,
-            symbol,
-            action,
-            qty,
-            price,
-            reason,
-            mode,
-          }))
-        );
-      }
-    }
-
-    const localLetter = loadMorningLetter();
-    if (localLetter) {
-      const remoteLetter = await fetchMorningLetter(userId, localLetter.date);
-      if (!remoteLetter) {
-        await saveMorningLetterDb(userId, localLetter.date, localLetter.content);
-      }
-    }
-
-    const alreadyHasRemoteQuizResults = await hasAnyQuizResults(userId);
-    if (!alreadyHasRemoteQuizResults) {
-      const localQuizLog = loadQuizLog();
-      if (localQuizLog.length > 0) {
-        await insertQuizResults(
-          userId,
-          localQuizLog.map(({ date, time, score, total }) => ({ date, time, score, total }))
-        );
-      }
-    }
-
-    // 이제 계정(클라우드)에 안전하게 옮겨졌으니, 로그아웃 후 게스트 화면에
-    // 이전 계정의 개인 데이터가 그대로 보이는 걸 막기 위해 로컬 캐시를 지운다.
-    window.localStorage.removeItem(TRADE_LOG_KEY);
-    window.localStorage.removeItem(MORNING_LETTER_KEY);
-    window.localStorage.removeItem(QUIZ_LOG_KEY);
-    window.localStorage.setItem(migratedKey, "1");
-  } catch {
-    // leave migratedKey unset so it retries on next login
-  }
-}
-
 export default function Home() {
   const [page, setPage] = useState<"home" | "quiz" | "invest" | "ai">("home");
   const [user, setUser] = useState<User | null>(null);
@@ -4485,25 +4426,14 @@ export default function Home() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [investMode, setInvestMode] = useState<InvestMode | null>(null);
-  const migratingRef = useRef<Set<string>>(new Set());
-
-  const triggerMigration = (uid: string) => {
-    if (migratingRef.current.has(uid)) return;
-    migratingRef.current.add(uid);
-    void migrateLocalDataToAccount(uid);
-  };
 
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => {
-      const sessionUser = data.session?.user ?? null;
-      setUser(sessionUser);
-      if (sessionUser) triggerMigration(sessionUser.id);
+      setUser(data.session?.user ?? null);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-      if (nextUser) triggerMigration(nextUser.id);
+      setUser(session?.user ?? null);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
